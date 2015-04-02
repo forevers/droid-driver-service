@@ -1,0 +1,130 @@
+*******************************
+***** Development Machine *****
+*******************************
+
+- Mac OS X 10.9.5
+- VMWare Fusion: Version 6.0.4 (1887983)
+
+*******************************
+***** Ubuntu Installation *****
+*******************************
+
+- http://releases.ubuntu.com/12.04.5/
+- 12.04.5 64 bit install
+- Select "Desktop CD" for the ISO
+- 64-bit PC (AMD64) desktop CD
+- Disable 3-d graphics prior to installing
+- Update recommended packages
+
+*******************************************************************
+***** Package modification for Android AOSP build environment *****
+*******************************************************************
+
+- Install package to meet AOSP package dependency requirements
+    $ sudo apt-get install libglapi-mesa:i386
+
+- AOSP package installation: https://source.android.com/source/initializing.html
+    $ sudo apt-get install git gnupg flex bison gperf build-essential zip curl libc6-dev libncurses5-dev:i386
+    $ sudo apt-get install x11proto-core-dev libx11-dev:i386 libreadline6-dev:i386 libgl1-mesa-glx:i386 
+    $ sudo apt-get install libgl1-mesa-dev g++-multilib mingw32 tofrodos python-markdown libxml2-utils xsltproc zlib1g-dev:i386
+
+- Java Installation
+    - The master branch of Android in the Android Open Source Project (AOSP) requires Java 7. On Ubuntu, use OpenJDK.
+    - To develop older versions of Android, download and install the corresponding version of the Java JDK:
+        - Java 6: for Gingerbread through KitKat
+        - Java 5: for Cupcake through Froyo
+    - Android KitKat will be targeted
+    - Here is a how-to-install reference
+        - http://linuxg.net/how-to-install-oracle-java-jdk-678-on-ubuntu-13-04-12-10-12-04/ 
+    - Some java version inspection commands:
+        - Show all the Java versions installed:
+            $ update-java-alternatives -l
+        - Shows the Java version currently used and help:
+            $ java -showversion
+        - Shows the Java version only:
+            $ java –version
+    - open jdk packages reside on VM but not installed so no "sudo apt-get purge opendjdk" is necessary
+    - Download and install Java: http://www.oracle.com/technetwork/java/javase/archive-139210.html
+        $ chmod u+x jdk-6u45-linux-x64.bin
+        $ ./jdk-6u45-linux-x64.bin
+        $ sudo mkdir -p /usr/lib/jvm
+        $ sudo mv jdk1.6.0_45 /usr/lib/jvm/
+    - establish /etc/alternative links 
+        $ sudo update-alternatives --install "/usr/bin/java" "java" "/usr/lib/jvm/jdk1.6.0_45/bin/java" 1
+        $ sudo update-alternatives --install "/usr/bin/javac" "javac" "/usr/lib/jvm/jdk1.6.0_45/bin/javac" 1
+        $ sudo update-alternatives --install "/usr/bin/javap" "javap" "/usr/lib/jvm/jdk1.6.0_45/bin/javap" 1
+        $ sudo update-alternatives --install "/usr/bin/jar" "jar" "/usr/lib/jvm/jdk1.6.0_45/bin/jar" 1
+        $ sudo update-alternatives --install "/usr/bin/javadoc" "javadoc" "/usr/lib/jvm/jdk1.6.0_45/bin/javadoc" 1
+
+*****************************
+***** AOSP Installation *****
+*****************************
+
+- Nexus 4 is mako
+- From https://source.android.com/source/downloading.html:
+    $ mkdir ~/bin
+    // add to .profile 
+    $ PATH=~/bin:$PATH
+    $ mkdir –p ~/aospDevelopment/aosp
+    $ cd ~/aospDevelopment/aosp
+    $ repo init -u https://android.googlesource.com/platform/manifest -b android-4.4.4_r1
+    $ repo sync
+    // AOSP prebuilt kernel is in /device/lge/mako-kernel/
+    // Interrogate this kernel for its version info
+        $ dd if=kernel bs=1 skip=$(LC_ALL=C grep -a -b -o $'\x1f\x8b\x08\x00\x00\x00\x00\x00' kernel | cut -d ':' -f 1) | zgrep -a 'Linux version'
+        // output is ...
+        Linux version 3.4.0-perf-ga6edd5e (android-build@kpdm5.cbf.corp.google.com) (gcc version 4.7 (GCC) ) #1 SMP PREEMPT Wed Apr 16 09:33:17 PDT 2014
+        Linux version CIFS VFS Client for Linux<7>%s: sess setup type %d
+        6001273+0 records in
+        6001273+0 records out
+        6001273 bytes (6.0 MB) copied, 5.54971 s, 1.1 MB/s
+    - a6edd5e is the branch of interest
+
+**************************
+***** Android Kernel *****
+**************************
+
+- git clone
+    $ mkdir –p ~/aospDevelopment/kernel
+    $ cd ~/aospDevelopment/kernel
+    $ git clone https://android.googlesource.com/kernelMako/msm.git
+    $ export ARCH=arm
+    $ export SUBARCH=arm
+    $ export CROSS_COMPILE=arm-eabi-
+- To have the AOSP build use externally located zImage
+    // was not able to get this to work
+    $ export TARGET_PREBUILT_KERNEL=~/aospDevelopment/kernelMako/msm/arch/arm/boot/zImage
+- checkout kernel android-4.4.4_r1 branch identified by AOSP prebuilt kernel inspection 
+    $ cd msm
+    $ git checkout a6edd5e
+- make kernel
+    $ make mako_defconfig
+    $ make –j6
+    // zImage output located at /arch/arm/boot
+- Kitkat required some effort to integrate kernel into image … don’t think this is required for later Android versions
+    - http://forum.xda-developers.com/showthread.php?t=1241005
+    - download and decompress boot.img-tools
+    - … TODO review unmkbootimg tool … may provide same information
+    $ cd boot.img-tools
+    - copy boot.img from kernel build output (arch/arm/boot/boot.img) into /boot.img-tools/source_imag/
+    $ tools/unpackbootimg -i source_img/boot.img -o unpack
+    // output is …
+        BOARD_KERNEL_CMDLINE console=ttyHSL0,115200,n8 androidboot.hardware=mako lpj=67677 
+        user_debug=31
+        BOARD_KERNEL_BASE 80200000
+        BOARD_PAGE_SIZE 00000800
+    - create new image
+    $ ~/aospDevelopment/aosp/out/host/linux-x86/bin/mkbootimg --kernel ~/aospDevelopment/kernelMako/msm/arch/arm/boot/zImage --ramdisk ~/aospDevelopment/aosp/out/target/product/mako/ramdisk.img --pagesize 2048 --base 80200000 -- cmdline 'console=ttyHSL0,115200,n8 androidboot.hardware=mako lpj=67677' -o mynewimage.img
+    - test the new image
+        $ cd ~/aospDevelopment/mkImageTools/imageTools/boot.img-tool
+        $ sudo ~/aospDevelopment/aosp/out/host/linux-x86/bin/fastboot boot mynewimage.img 
+
+**************************
+***** Android Platform *****
+**************************
+
+- Build AOSP
+    $ source build/envsetup.sh
+    $ lunch mako
+    $ make –j6
+    
