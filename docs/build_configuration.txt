@@ -118,6 +118,15 @@
     - test the new image
         $ cd ~/aospDevelopment/mkImageTools/imageTools/boot.img-tool
         $ sudo ~/aospDevelopment/aosp/out/host/linux-x86/bin/fastboot boot mynewimage.img 
+        // root adb access
+        $ adb root
+        // kernel printk log
+        $ adb shell dmesg | grep canonical
+        $ adb shell cat /proc/kmsg
+        // procfs access to driver
+        $ adb shell
+            # cat /proc/canonical_char_drv
+            # echo '5' > /proc/canonical_char_drv
 
 **************************
 ***** Android Platform *****
