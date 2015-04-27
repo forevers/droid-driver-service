@@ -106,7 +106,7 @@
     - download and decompress boot.img-tools
     - … TODO review unmkbootimg tool … may provide same information
     $ cd boot.img-tools
-    - copy boot.img from kernel build output (arch/arm/boot/boot.img) into /boot.img-tools/source_imag/
+    - copy boot.img from aosp (out/target/product/mako/boot.img) into /boot.img-tools/source_img/
     $ tools/unpackbootimg -i source_img/boot.img -o unpack
     // output is …
         BOARD_KERNEL_CMDLINE console=ttyHSL0,115200,n8 androidboot.hardware=mako lpj=67677 
@@ -114,26 +114,32 @@
         BOARD_KERNEL_BASE 80200000
         BOARD_PAGE_SIZE 00000800
     - create new image
-    $ ~/aospDevelopment/aosp/out/host/linux-x86/bin/mkbootimg --kernel ~/aospDevelopment/kernelMako/msm/arch/arm/boot/zImage --ramdisk ~/aospDevelopment/aosp/out/target/product/mako/ramdisk.img --pagesize 2048 --base 80200000 -- cmdline 'console=ttyHSL0,115200,n8 androidboot.hardware=mako lpj=67677' -o mynewimage.img
+    $ ~/aospDevelopment/aosp/out/host/linux-x86/bin/mkbootimg --kernel ~/aospDevelopment/kernelMako/msm/arch/arm/boot/zImage --ramdisk ~/aospDevelopment/aosp/out/target/product/mako/ramdisk.img --pagesize 2048 --base 80200000 --cmdline 'console=ttyHSL0,115200,n8 androidboot.hardware=mako lpj=67677' -o mynewimage.img
     - test the new image
         $ cd ~/aospDevelopment/mkImageTools/imageTools/boot.img-tool
+        $ adb reboot bootloader
         $ sudo ~/aospDevelopment/aosp/out/host/linux-x86/bin/fastboot boot mynewimage.img 
         // root adb access
         $ adb root
         // kernel printk log
         $ adb shell dmesg | grep canonical
         $ adb shell cat /proc/kmsg
-        // procfs access to driver
+        // procfs and sysfs driver configuration
         $ adb shell
-            # cat /proc/canonical_char_drv
             # echo '5' > /proc/canonical_char_drv
+            # cat /proc/canonical_char_drv
+            # echo '10' > /sys/class/canonical_char_drv/canonical_char_drv/mode
+            # cat /sys/class/canonical_char_drv/canonical_char_drv/mode
+ 
 
-**************************
+****************************
 ***** Android Platform *****
-**************************
+****************************
 
 - Build AOSP
     $ source build/envsetup.sh
     $ lunch mako
     $ make –j6
+    $ adb reboot
+    $ fastboot -w -pmako flashall
     
