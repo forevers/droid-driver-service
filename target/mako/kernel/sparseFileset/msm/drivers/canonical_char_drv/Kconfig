@@ -1,0 +1,3 @@
+config CANONICAL_CHAR_DRV
+	tristate "canonical character driver"
+	default n
