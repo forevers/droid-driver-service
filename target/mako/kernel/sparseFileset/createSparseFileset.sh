@@ -2,24 +2,28 @@
 
 # create sparse directory of modified and newly created files
 
-# modified files
-mkdir -p sparseFileset/msm/android/configs
-mkdir -p sparseFileset/msm/arch/arm/configs
-mkdir -p sparseFileset/msm/drivers
-mkdir -p sparseFileset/msm/drivers/staging/android
+# android kernel location
 
-cp msm/android/configs/android-base.cfg sparseFileset/msm/android/configs/android-base.cfg
-cp msm/arch/arm/configs/mako_defconfig sparseFileset/msm/arch/arm/configs/mako_defconfig
-cp msm/drivers/Kconfig sparseFileset/msm/drivers/Kconfig
-cp msm/drivers/Makefile sparseFileset/msm/drivers/Makefile
-cp msm/drivers/staging/android/Kconfig sparseFileset/msm/drivers/staging/android/Kconfig
-cp msm/drivers/staging/android/Makefile sparseFileset/msm/drivers/staging/android/Makefile
+KERNEL_ROOTDIR=~/aospDevelopment/kernelMako/msm
+
+# modified files
+mkdir -p ./msm/android/configs
+mkdir -p ./msm/arch/arm/configs
+mkdir -p ./msm/drivers
+mkdir -p ./msm/drivers/staging/android
+
+cp $KERNEL_ROOTDIR/android/configs/android-base.cfg ./msm/android/configs/android-base.cfg
+cp $KERNEL_ROOTDIR/arch/arm/configs/mako_defconfig ./msm/arch/arm/configs/mako_defconfig
+cp $KERNEL_ROOTDIR/drivers/Kconfig ./msm/drivers/Kconfig
+cp $KERNEL_ROOTDIR/drivers/Makefile ./msm/drivers/Makefile
+cp $KERNEL_ROOTDIR/drivers/staging/android/Kconfig ./msm/drivers/staging/android/Kconfig
+cp $KERNEL_ROOTDIR/drivers/staging/android/Makefile ./msm/drivers/staging/android/Makefile
 
 # new files
-mkdir -p sparseFileset/msm/drivers
-mkdir -p sparseFileset/msm/drivers/canonical_char_drv
+mkdir -p ./msm/drivers
+mkdir -p ./msm/drivers/canonical_char_drv
 
-cp msm/drivers/canonical_char_drv/canonical_char_drv.c sparseFileset/msm/drivers/canonical_char_drv/canonical_char_drv.c
-cp msm/drivers/canonical_char_drv/Kconfig sparseFileset/msm/drivers/canonical_char_drv/Kconfig
-cp msm/drivers/canonical_char_drv/Makefile sparseFileset/msm/drivers/canonical_char_drv/Makefile
-cp msm/drivers/Makefile sparseFileset/msm/drivers/Makefile
+cp $KERNEL_ROOTDIR/drivers/canonical_char_drv/canonical_char_drv.c ./msm/drivers/canonical_char_drv/canonical_char_drv.c
+cp $KERNEL_ROOTDIR/drivers/canonical_char_drv/Kconfig ./msm/drivers/canonical_char_drv/Kconfig
+cp $KERNEL_ROOTDIR/drivers/canonical_char_drv/Makefile ./msm/drivers/canonical_char_drv/Makefile
+cp $KERNEL_ROOTDIR/drivers/Makefile ./msm/drivers/Makefile
