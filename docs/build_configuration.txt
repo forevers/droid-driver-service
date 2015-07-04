@@ -116,7 +116,7 @@
     - create new image
     $ ~/aospDevelopment/aosp/out/host/linux-x86/bin/mkbootimg --kernel ~/aospDevelopment/kernelMako/msm/arch/arm/boot/zImage --ramdisk ~/aospDevelopment/aosp/out/target/product/mako/ramdisk.img --pagesize 2048 --base 80200000 --cmdline 'console=ttyHSL0,115200,n8 androidboot.hardware=mako lpj=67677' -o mynewimage.img
     - test the new image
-        $ cd ~/aospDevelopment/mkImageTools/imageTools/boot.img-tool
+        $ cd ~/aospDevelopment/mkImageTools/imageTools/boot.img-tools
         $ adb reboot bootloader
         $ sudo ~/aospDevelopment/aosp/out/host/linux-x86/bin/fastboot boot mynewimage.img 
         // root adb access
@@ -138,7 +138,7 @@
 
 - Build AOSP
     $ source build/envsetup.sh
-    $ lunch mako
+    $ lunch aosp_mako-userdebug
     $ make –j6
     $ adb reboot
     $ fastboot -w -pmako flashall

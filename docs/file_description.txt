@@ -1,0 +1,79 @@
+
+****************************************************
+***** Directory Tree of new and modified files *****
+****************************************************
+
+└── droid-driver-service
+    ├── docs
+    │   └── build_configuration.txt
+    ├── README.md
+    └── target
+        └── mako
+            └── kernel
+                ├── patch
+                │   ├── gitDiff
+                │   ├── gitDiffCached
+                │   └── Readme.md
+                └── sparseFileset
+                    ├── createSparseFileset.sh
+                    └── msm
+                        ├── android
+                        │   └── configs
+                        │       └── android-base.cfg
+                        ├── arch
+                        │   └── arm
+                        │       └── configs
+                        │           └── mako_defconfig
+                        └── drivers
+                            ├── canonical_char_drv
+                            │   ├── canonical_char_drv.c
+                            │   ├── Kconfig
+                            │   └── Makefile
+                            ├── Kconfig
+                            ├── Makefile
+                            └── staging
+                                └── android
+                                    ├── Kconfig
+                                    └── Makefile
+
+*****************************
+***** File Descriptions *****
+*****************************
+
+droid-driver-service/docs :
+	Documentation directory
+
+droid-driver-service/target/mako/kernel/patch :
+	Patches to AOSP
+	gitDiff - contains modified kernel file changes
+	gitDiffCached - contains newley added kernel files
+
+droid-driver-service/target/mako/kernel/sparseFileset :
+	createSparseFileset.sh - copy all touched and newly created AOSP files from full AOSP directoy to this
+	sparseFileset directory
+
+droid-driver-service/target/mako/kernel/sparseFileset/msm/android/configs :
+	android-base.cfg - adds the driver to the build, CONFIG_CANONICAL_CHAR_DRV=y
+
+droid-driver-service/target/mako/kernel/sparseFileset/msm/arch/arm/configs :
+	mako_defconfig - adds the driver to the make build CONFIG_CANONICAL_CHAR_DRV=y
+	// TODO this is probably redundant
+
+droid-driver-service/target/mako/kernel/sparseFileset/msm/drivers/canonical_char_drv :
+	New kernel driver directory
+	canonical_char_drv.c - new canonical charactor driver installed in dev/ and /sys/class.
+	TODO add debugfs registration
+	canonical_char_drv.h - 
+	Kconfig - driver Kconfig, CANONICAL_CHAR_DRV
+    Makefile - driver makefile
+
+droid-driver-service/target/mako/kernel/sparseFileset/msm/drivers :
+	KCconfig - source the driver, source "drivers/canonical_char_drv/Kconfig"
+	Makefile - higher level makefile, built in driver
+
+droid-driver-service/target/mako/kernel/sparseFileset/msm/drivers/staging/android :
+	TODO review the staging files
+	Kconfig - 
+	Makefile -
+
+
