@@ -13,6 +13,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <asm/uaccess.h>
+
 #include <linux/types.h>
 #include <linux/proc_fs.h>
 
@@ -22,7 +24,7 @@
 #include <linux/fs.h>           // file_operations
 #include <linux/init.h>         // module_init, module_exit
 #include <linux/module.h>       // for modules
- #include <linux/poll.h>
+#include <linux/poll.h>
 #include <linux/slab.h>         // kmalloc
 #include <linux/uaccess.h>      // copy_(to,from)_user
 
@@ -94,7 +96,7 @@ static int
 drv_open (struct inode *inode, struct file * pFile)
 {
     struct CanonicalCharDevice* pCharDevice;
-    printk(KERN_INFO DEVICE_NODE_NAME": drv_open() %s:\n\n", DEVICE_NODE_NAME);
+    printk(KERN_INFO DEVICE_NODE_NAME": drv_open()\n");
 
     pCharDevice = container_of(inode->i_cdev, struct CanonicalCharDevice, dev);
     pFile->private_data = pCharDevice;
@@ -105,7 +107,7 @@ drv_open (struct inode *inode, struct file * pFile)
 static int 
 drv_release (struct inode *inode, struct file *file) {
 
-    printk(KERN_INFO DEVICE_NODE_NAME": drv_release() %s:\n\n", DEVICE_NODE_NAME);
+    printk(KERN_INFO DEVICE_NODE_NAME": drv_release()\n");
     return 0;
 }
 
@@ -179,67 +181,67 @@ drv_read (struct file *file, char __user * buf, size_t lbuf, loff_t * ppos) {
 static ssize_t
 drv_write (struct file *file, const char __user * buf, size_t lbuf, loff_t * ppos) {
 
-    struct CanonicalCharDevice* pCharDevice = file->private_data;
-    struct circ_buf* pCircBuf = &(pCharDevice->circBuf);
+    //struct CanonicalCharDevice* pCharDevice = file->private_data;
+    //struct circ_buf* pCircBuf = &(pCharDevice->circBuf);
     ssize_t retVal = 0;
 
     printk(KERN_INFO DEVICE_NODE_NAME": drv_write()\n");
 
-    if (down_interruptible(&(pCharDevice->sem))) {
-        return -ERESTARTSYS; 
-    }
+    // if (down_interruptible(&(pCharDevice->sem))) {
+    //     return -ERESTARTSYS; 
+    // }
 
-    if (lbuf <= CHARS_FREE(pCircBuf)) {
+    // if (lbuf <= CHARS_FREE(pCircBuf)) {
 
-        int charsFreeToEnd = CHARS_FREE_TO_END(pCircBuf);
+    //     int charsFreeToEnd = CHARS_FREE_TO_END(pCircBuf);
 
-        if (lbuf <= charsFreeToEnd) {
+    //     if (lbuf <= charsFreeToEnd) {
 
-            // single segment write into circular buffer
-            if (!copy_from_user(pCircBuf->buf + pCircBuf->head, buf, lbuf)) {
+    //         // single segment write into circular buffer
+    //         if (!copy_from_user(pCircBuf->buf + pCircBuf->head, buf, lbuf)) {
 
-                pCircBuf->head = pCircBuf->head + lbuf;
-                retVal = lbuf;
+    //             pCircBuf->head = pCircBuf->head + lbuf;
+    //             retVal = lbuf;
 
-            } else {
-                printk(KERN_ERR DEVICE_NODE_NAME": copy_from_user() failed\n");
-                retVal = -EFAULT;
-                goto out;
-            }
-        }
-        else {
+    //         } else {
+    //             printk(KERN_ERR DEVICE_NODE_NAME": copy_from_user() failed\n");
+    //             retVal = -EFAULT;
+    //             goto out;
+    //         }
+    //     }
+    //     else {
 
-            // dual segment write into circular buffer
-            if (!copy_from_user(pCircBuf->buf + pCircBuf->head, buf, charsFreeToEnd)) {
+    //         // dual segment write into circular buffer
+    //         if (!copy_from_user(pCircBuf->buf + pCircBuf->head, buf, charsFreeToEnd)) {
 
-                if (copy_from_user(pCircBuf->buf, buf, lbuf - charsFreeToEnd)) {
+    //             if (copy_from_user(pCircBuf->buf, buf, lbuf - charsFreeToEnd)) {
 
-                    pCircBuf->head = lbuf - charsFreeToEnd;
-                    retVal = lbuf;
+    //                 pCircBuf->head = lbuf - charsFreeToEnd;
+    //                 retVal = lbuf;
 
-                } else {
-                    printk(KERN_ERR DEVICE_NODE_NAME": copy_from_user() failed\n");
-                    retVal = -EFAULT;
-                    goto out;
-                } 
-            } else {
-                printk(KERN_ERR DEVICE_NODE_NAME": copy_from_user() failed\n");
-                retVal = -EFAULT;
-                goto out;
-            }
-        }
+    //             } else {
+    //                 printk(KERN_ERR DEVICE_NODE_NAME": copy_from_user() failed\n");
+    //                 retVal = -EFAULT;
+    //                 goto out;
+    //             } 
+    //         } else {
+    //             printk(KERN_ERR DEVICE_NODE_NAME": copy_from_user() failed\n");
+    //             retVal = -EFAULT;
+    //             goto out;
+    //         }
+    //     }
 
-        printk(KERN_INFO DEVICE_NODE_NAME": write success: nbytes=%d, head = %d, tail = %d, pos=%d\n", 
-            retVal, pCircBuf->head, pCircBuf->tail, (int)*ppos);
-    }
-    else
-    {
-        printk(KERN_ERR DEVICE_NODE_NAME": no space in buffer\n");
-        retVal = -ENOMEM;
-    }
+    //     printk(KERN_INFO DEVICE_NODE_NAME": write success: nbytes=%d, head = %d, tail = %d, pos=%d\n", 
+    //         retVal, pCircBuf->head, pCircBuf->tail, (int)*ppos);
+    // }
+    // else
+    // {
+    //     printk(KERN_ERR DEVICE_NODE_NAME": no space in buffer\n");
+    //     retVal = -ENOMEM;
+    // }
 
-    out:
-    up(&(pCharDevice->sem));
+    // out:
+    // up(&(pCharDevice->sem));
 
     return retVal;
 }
@@ -309,25 +311,43 @@ Like POLLRDBAND, this bit means that data with nonzero priority can be written t
 static long drv_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
     long retVal = -EINVAL;
-    //void __user *argp = (void __user *) arg;
+    int err = 0;
 
     struct CanonicalCharDevice* pCharDevice = file->private_data;
 
     printk(KERN_INFO DEVICE_NODE_NAME": drv_ioctl()\n");
+    printk(KERN_INFO DEVICE_NODE_NAME": cmd: %d\n", cmd);
+
+    // validate magic number and ioctl number
+    if (_IOC_TYPE(cmd) != __CANONICAL_CHAR_DRV_IOC) return retVal;
+    if (_IOC_NR(cmd) >= __CANONICAL_CHAR_DRV_IOC_MAX_NMBR) return retVal;
+
+    // validate arg read user memory space or write linux memory space
+    if (_IOC_DIR(cmd) & _IOC_READ)
+        err = !access_ok(VERIFY_WRITE, (void __user*)arg, _IOC_SIZE(cmd));
+    if (_IOC_DIR(cmd) & _IOC_WRITE)
+        err = !access_ok(VERIFY_READ, (void __user*)arg, _IOC_SIZE(cmd));
+    if (err) return -EFAULT;
 
     if (down_interruptible(&(pCharDevice->sem))) {
         return -ERESTARTSYS; 
     }
 
     switch (cmd) {
-    case GET_NUM_BYTES_AVAIL:
-        printk(KERN_INFO DEVICE_NODE_NAME": GET_NUM_BYTES_AVAIL\n");
+    case GET_BUFFER_CAPACITY:
+        printk(KERN_INFO DEVICE_NODE_NAME": GET_BUFFER_CAPACITY, KBUF_SIZE: %d\n", KBUF_SIZE);
+        retVal = __put_user(KBUF_SIZE, (int __user*)arg);
         break;
     case GET_BUFFER_SIZE:
-        printk(KERN_INFO DEVICE_NODE_NAME": GET_NUM_BYTES_AVAIL\n");
+        printk(KERN_INFO DEVICE_NODE_NAME": GET_BUFFER_SIZE, bufSize: %d\n", pCharDevice->bufSize);
+        retVal = __put_user(pCharDevice->bufSize, (int __user*)arg);
         break;
     case FLUSH_BUFFER:
-        printk(KERN_INFO DEVICE_NODE_NAME": GET_NUM_BYTES_AVAIL\n");
+        printk(KERN_INFO DEVICE_NODE_NAME": FLUSH_BUFFER\n");
+        // reset head and tail pointers
+        pCharDevice->circBuf.head = pCharDevice->circBuf.tail = 0;
+        pCharDevice->bufSize = 0;
+        retVal = 0;
         break;
     }
 

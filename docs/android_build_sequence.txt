@@ -80,74 +80,26 @@
         6001273 bytes (6.0 MB) copied, 5.54971 s, 1.1 MB/s
     - a6edd5e is the branch of interest
 
-**************************
-***** Android Kernel *****
-**************************
-
-- git clone
-    $ mkdir –p ~/aospDevelopment/kernel
-    $ cd ~/aospDevelopment/kernel
-    $ git clone https://android.googlesource.com/kernelMako/msm.git
-    $ export ARCH=arm
-    $ export SUBARCH=arm
-    $ export CROSS_COMPILE=arm-eabi-
-- To have the AOSP build use externally located zImage
-    // was not able to get this to work
-    $ export TARGET_PREBUILT_KERNEL=~/aospDevelopment/kernelMako/msm/arch/arm/boot/zImage
-- checkout kernel android-4.4.4_r1 branch identified by AOSP prebuilt kernel inspection 
-    $ cd msm
-    $ git checkout a6edd5e
-- make kernel
-    $ make mako_defconfig
-    $ make –j6
-    // zImage output located at /arch/arm/boot
-- Kitkat required some effort to integrate kernel into image … don’t think this is required for later Android versions
-    - http://forum.xda-developers.com/showthread.php?t=1241005
-    - download and decompress boot.img-tools
-    - … TODO review unmkbootimg tool … may provide same information
-    $ cd boot.img-tools
-    - copy boot.img from aosp (out/target/product/mako/boot.img) into /boot.img-tools/source_img/
-    $ tools/unpackbootimg -i source_img/boot.img -o unpack
-    // output is …
-        BOARD_KERNEL_CMDLINE console=ttyHSL0,115200,n8 androidboot.hardware=mako lpj=67677 
-        user_debug=31
-        BOARD_KERNEL_BASE 80200000
-        BOARD_PAGE_SIZE 00000800
-    - create new image
-    $ ~/aospDevelopment/aosp/out/host/linux-x86/bin/mkbootimg --kernel ~/aospDevelopment/kernelMako/msm/arch/arm/boot/zImage --ramdisk ~/aospDevelopment/aosp/out/target/product/mako/ramdisk.img --pagesize 2048 --base 80200000 --cmdline 'console=ttyHSL0,115200,n8 androidboot.hardware=mako lpj=67677' -o mynewimage.img
-    - test the new image
-        $ cd ~/aospDevelopment/mkImageTools/imageTools/boot.img-tools
-        $ adb reboot bootloader
-		// TODO fix fastboot tool to run without sudo
-        $ sudo ~/aospDevelopment/aosp/out/host/linux-x86/bin/fastboot boot mynewimage.img 
-        // root adb access
-        $ adb root
-        // kernel printk log
-        $ adb shell dmesg | grep canonical
-        $ adb shell cat /proc/kmsg
-        // procfs and sysfs driver configuration
-        $ adb shell
-            # echo '5' > /proc/canonical_char_drv
-            # cat /proc/canonical_char_drv
-            # echo '10' > /sys/class/canonical_char_drv/canonical_char_drv/mode
-            # cat /sys/class/canonical_char_drv/canonical_char_drv/mode
-		// command line test of android HAL module
-		$ adb root
-		$ adb shell /system/bin/test_canonical_char_drv
-			// inspect shell output, kernal and logcat outpus
-		$ adb shell dmesg > eraseme
-		$ adb shell logcat *:V > logcatEraseme
- 
-
 ****************************
 ***** Android Platform *****
 ****************************
 
 - Build AOSP
+	// apply patches
     $ source build/envsetup.sh
     $ lunch aosp_mako-userdebug
     $ make –j6
     $ adb reboot bootloader 
 	// TODO fix fastboot tool to run without sudo
 	$ sudo ~/aospDevelopment/aosp/out/host/linux-x86/bin/fastboot -w -pmako flashall
+
+	// verify test of HAL module
+	$ adb shell
+	shell@mako:/ $ ls -l /system/lib/hw                                            
+		...
+		-rw-r--r-- root     root         5348 2015-05-29 17:46 canonical_char_drv.default.so
+
+	shell@mako:/ $ ls -l /system/bin                                               
+		...
+		-rwxr-xr-x root     shell        5368 2015-06-14 21:34 test_canonical_char_drv
     

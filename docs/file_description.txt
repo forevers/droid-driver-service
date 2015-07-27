@@ -9,6 +9,16 @@
     ├── README.md
     └── target
         └── mako
+			├── android
+			│   ├── patch
+            │   │   ├── gitDiff
+            │   │   ├── gitDiffCached
+            │   │   └── Readme.md
+            │   └── sparseFileset
+            │       ├── createSparseFileset.sh
+            │       └── aosp
+            │           ├── device/lge/mako
+            │           │              ├── device.mk
             └── kernel
                 ├── patch
                 │   ├── gitDiff
@@ -36,9 +46,35 @@
                                     ├── Kconfig
                                     └── Makefile
 
-*****************************
-***** File Descriptions *****
-*****************************
+
+
+******************************************
+***** Android Build File Descriptions *****
+******************************************
+
+droid-driver-service/target/mako/android/sparseFileset/aosp/device/lge/mako :
+	device.mk - adds chanonical_char_drv package and its test package, 
+		PRODUCT_PACKAGES += canonical_char_drv.default, PRODUCT_PACKAGES += test_canonical_char_drv
+	init.mako.rc - chmod module to 0x666
+
+droid-driver-service/target/mako/android/sparseFileset/aosp/device/lge/mako/bin/testCanonicalCharDrv :
+	Android.mk - makefile for canonical_char_drv module test
+	test_canonical_char_drv.c - canonical_char_drv module test
+
+droid-driver-service/target/mako/android/sparseFileset/aosp/hardware/libhardware/modules :
+	Android.mk - add canonical_char_drv to hardware_modules list
+
+droid-driver-service/target/mako/android/sparseFileset/aosp/hardware/libhardware/include/hardware :
+	canonical_char_drv.h - cananical charactor driver android HAL interface definition
+
+droid-driver-service/target/mako/android/sparseFileset/aosp/hardware/libhardware/modules/canonical_char_drv :
+	Android.mk - canonical_char_drv.default make file
+	libcanonical_char_drv.c - Android HAL module, makes call into the driver and exposes HAL interface to platform
+
+
+******************************************
+***** Kernel Build File Descriptions *****
+******************************************
 
 droid-driver-service/docs :
 	Documentation directory

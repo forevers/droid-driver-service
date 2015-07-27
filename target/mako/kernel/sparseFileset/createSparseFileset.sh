@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# create sparse directory of modified and newly created files
+# create kernel sparse directory of modified and newly created files
 
 # android kernel location
 
@@ -24,7 +24,7 @@ mkdir -p ./msm/drivers
 mkdir -p ./msm/drivers/canonical_char_drv
 
 cp $KERNEL_ROOTDIR/drivers/canonical_char_drv/canonical_char_drv.c ./msm/drivers/canonical_char_drv/canonical_char_drv.c
-cp $KERNEL_ROOTDIR/drivers/canonical_char_drv/canonical_char_drv.c ./msm/drivers/canonical_char_drv/canonical_char_drv.h
+cp $KERNEL_ROOTDIR/drivers/canonical_char_drv/canonical_char_drv.h ./msm/drivers/canonical_char_drv/canonical_char_drv.h
 cp $KERNEL_ROOTDIR/drivers/canonical_char_drv/Kconfig ./msm/drivers/canonical_char_drv/Kconfig
 cp $KERNEL_ROOTDIR/drivers/canonical_char_drv/Makefile ./msm/drivers/canonical_char_drv/Makefile
-cp $KERNEL_ROOTDIR/drivers/Makefile ./msm/drivers/Makefile
+
