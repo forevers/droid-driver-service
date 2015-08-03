@@ -124,6 +124,8 @@ drv_read (struct file *file, char __user * buf, size_t lbuf, loff_t * ppos) {
         return -ERESTARTSYS; 
     }
 
+    printk(KERN_INFO DEVICE_NODE_NAME": lbuf=%d, charPending=%d\n", lbuf, CHARS_PENDING(pCircBuf));
+
     if (lbuf <= CHARS_PENDING(pCircBuf)) {
 
         int charsPendingToEnd = CHARS_PENDING_TO_END(pCircBuf);
@@ -163,7 +165,7 @@ drv_read (struct file *file, char __user * buf, size_t lbuf, loff_t * ppos) {
                 goto out;
             }
         }
-    
+
         printk(KERN_INFO DEVICE_NODE_NAME": read success: nbytes=%d, head = %d, tail = %d, pos=%d\n", 
             retVal, pCircBuf->head, pCircBuf->tail, (int)*ppos);
             
@@ -181,67 +183,67 @@ drv_read (struct file *file, char __user * buf, size_t lbuf, loff_t * ppos) {
 static ssize_t
 drv_write (struct file *file, const char __user * buf, size_t lbuf, loff_t * ppos) {
 
-    //struct CanonicalCharDevice* pCharDevice = file->private_data;
-    //struct circ_buf* pCircBuf = &(pCharDevice->circBuf);
+    struct CanonicalCharDevice* pCharDevice = file->private_data;
+    struct circ_buf* pCircBuf = &(pCharDevice->circBuf);
     ssize_t retVal = 0;
 
     printk(KERN_INFO DEVICE_NODE_NAME": drv_write()\n");
 
-    // if (down_interruptible(&(pCharDevice->sem))) {
-    //     return -ERESTARTSYS; 
-    // }
+    if (down_interruptible(&(pCharDevice->sem))) {
+        return -ERESTARTSYS; 
+    }
 
-    // if (lbuf <= CHARS_FREE(pCircBuf)) {
+    if (lbuf <= CHARS_FREE(pCircBuf)) {
 
-    //     int charsFreeToEnd = CHARS_FREE_TO_END(pCircBuf);
+        int charsFreeToEnd = CHARS_FREE_TO_END(pCircBuf);
 
-    //     if (lbuf <= charsFreeToEnd) {
+        if (lbuf <= charsFreeToEnd) {
 
-    //         // single segment write into circular buffer
-    //         if (!copy_from_user(pCircBuf->buf + pCircBuf->head, buf, lbuf)) {
+            // single segment write into circular buffer
+            if (!copy_from_user(pCircBuf->buf + pCircBuf->head, buf, lbuf)) {
 
-    //             pCircBuf->head = pCircBuf->head + lbuf;
-    //             retVal = lbuf;
+                pCircBuf->head = pCircBuf->head + lbuf;
+                retVal = lbuf;
 
-    //         } else {
-    //             printk(KERN_ERR DEVICE_NODE_NAME": copy_from_user() failed\n");
-    //             retVal = -EFAULT;
-    //             goto out;
-    //         }
-    //     }
-    //     else {
+            } else {
+                printk(KERN_ERR DEVICE_NODE_NAME": copy_from_user() failed\n");
+                retVal = -EFAULT;
+                goto out;
+            }
+        }
+        else {
 
-    //         // dual segment write into circular buffer
-    //         if (!copy_from_user(pCircBuf->buf + pCircBuf->head, buf, charsFreeToEnd)) {
+            // dual segment write into circular buffer
+            if (!copy_from_user(pCircBuf->buf + pCircBuf->head, buf, charsFreeToEnd)) {
 
-    //             if (copy_from_user(pCircBuf->buf, buf, lbuf - charsFreeToEnd)) {
+                if (copy_from_user(pCircBuf->buf, buf, lbuf - charsFreeToEnd)) {
 
-    //                 pCircBuf->head = lbuf - charsFreeToEnd;
-    //                 retVal = lbuf;
+                    pCircBuf->head = lbuf - charsFreeToEnd;
+                    retVal = lbuf;
 
-    //             } else {
-    //                 printk(KERN_ERR DEVICE_NODE_NAME": copy_from_user() failed\n");
-    //                 retVal = -EFAULT;
-    //                 goto out;
-    //             } 
-    //         } else {
-    //             printk(KERN_ERR DEVICE_NODE_NAME": copy_from_user() failed\n");
-    //             retVal = -EFAULT;
-    //             goto out;
-    //         }
-    //     }
+                } else {
+                    printk(KERN_ERR DEVICE_NODE_NAME": copy_from_user() failed\n");
+                    retVal = -EFAULT;
+                    goto out;
+                }
+            } else {
+                printk(KERN_ERR DEVICE_NODE_NAME": copy_from_user() failed\n");
+                retVal = -EFAULT;
+                goto out;
+            }
+        }
 
-    //     printk(KERN_INFO DEVICE_NODE_NAME": write success: nbytes=%d, head = %d, tail = %d, pos=%d\n", 
-    //         retVal, pCircBuf->head, pCircBuf->tail, (int)*ppos);
-    // }
-    // else
-    // {
-    //     printk(KERN_ERR DEVICE_NODE_NAME": no space in buffer\n");
-    //     retVal = -ENOMEM;
-    // }
+        printk(KERN_INFO DEVICE_NODE_NAME": write success: nbytes=%d, head = %d, tail = %d, pos=%d\n", 
+            retVal, pCircBuf->head, pCircBuf->tail, (int)*ppos);
+    }
+    else
+    {
+        printk(KERN_ERR DEVICE_NODE_NAME": no space in buffer\n");
+        retVal = -ENOMEM;
+    }
 
-    // out:
-    // up(&(pCharDevice->sem));
+    out:
+    up(&(pCharDevice->sem));
 
     return retVal;
 }
