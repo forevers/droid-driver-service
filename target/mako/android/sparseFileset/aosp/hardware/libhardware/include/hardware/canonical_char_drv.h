@@ -66,7 +66,7 @@ struct canonical_char_drv_device_t {
    * timeout: the max wait time (in ms). The value of -1 means wait forever
    * Returns: < 0 or error, 0 on timeout, the amount of new data (in bytes)
    */
-  int (*wait_for_buffer_data)(struct canonical_char_drv_device_t* dev, int timeout);
+  int (*wait_for_buffer_data)(struct canonical_char_drv_device_t* dev, uint8_t* pBuffer, int size, int timeout);
 };
 
 __END_DECLS

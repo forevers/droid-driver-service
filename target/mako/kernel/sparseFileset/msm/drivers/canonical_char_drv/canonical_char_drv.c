@@ -25,6 +25,7 @@
 #include <linux/init.h>         // module_init, module_exit
 #include <linux/module.h>       // for modules
 #include <linux/poll.h>
+#include <linux/sched.h>          // wait queues
 #include <linux/slab.h>         // kmalloc
 #include <linux/uaccess.h>      // copy_(to,from)_user
 
@@ -47,15 +48,15 @@
 
 
 struct CanonicalCharDevice {
-    struct circ_buf circBuf;   // dynamically allocated buffer
-    //char *kbuf;                 
-    //char* pHead;                // buffer head
-    //char* pTail;                // buffer tail
-    // TODO static or dynamic alloc
-    int dummyMode;              // set a "mode" for the device (for procfs, sysfs, and ioctl access)
-    ssize_t bufSize;            // buffer depth
-    struct semaphore sem;       // buffer access semaphore
-    struct cdev dev;            // charactor device
+    struct circ_buf circBuf;        // dynamically allocated buffer
+    wait_queue_head_t wq_read;      // read data available sync
+    wait_queue_head_t wq_write;     // write buffer space available sync
+    atomic_t data_ready_to_read;
+    atomic_t buffer_ready_to_write;
+    int dummyMode;                  // set a "mode" for the device (for procfs, sysfs, and ioctl access)
+    ssize_t bufSize;                // buffer depth
+    struct semaphore sem;           // buffer access semaphore
+    struct cdev dev;                // charactor device
 };
 static struct CanonicalCharDevice* pCanonicalCharDevice = NULL;
 
@@ -112,7 +113,7 @@ drv_release (struct inode *inode, struct file *file) {
 }
 
 static ssize_t
-drv_read (struct file *file, char __user * buf, size_t lbuf, loff_t * ppos) {
+drv_read (struct file *file, char __user *buf, size_t lbuf, loff_t *ppos) {
 
     struct CanonicalCharDevice* pCharDevice = file->private_data; 
     struct circ_buf* pCircBuf = &(pCharDevice->circBuf);
@@ -124,7 +125,7 @@ drv_read (struct file *file, char __user * buf, size_t lbuf, loff_t * ppos) {
         return -ERESTARTSYS; 
     }
 
-    printk(KERN_INFO DEVICE_NODE_NAME": lbuf=%d, charPending=%d\n", lbuf, CHARS_PENDING(pCircBuf));
+    printk(KERN_INFO DEVICE_NODE_NAME": lbuf=%d, CHARS_PENDING=%d\n", lbuf, CHARS_PENDING(pCircBuf));
 
     if (lbuf <= CHARS_PENDING(pCircBuf)) {
 
@@ -137,6 +138,13 @@ drv_read (struct file *file, char __user * buf, size_t lbuf, loff_t * ppos) {
 
                 pCircBuf->tail = pCircBuf->tail + lbuf;
                 retVal = lbuf;
+
+                // buffer space available to write
+                atomic_set(&pCharDevice->buffer_ready_to_write, 1);
+
+                // no more data available to read
+                if (0 == CHARS_PENDING(pCircBuf))
+                    atomic_set(&pCharDevice->data_ready_to_read, 0);
 
             } else {
                 printk(KERN_ERR DEVICE_NODE_NAME": copy_to_user() failed\n");
@@ -153,6 +161,13 @@ drv_read (struct file *file, char __user * buf, size_t lbuf, loff_t * ppos) {
 
                     pCircBuf->tail = lbuf - charsPendingToEnd;
                     retVal = lbuf;
+
+                    // buffer space available to write
+                    atomic_set(&pCharDevice->buffer_ready_to_write, 1);
+
+                    // no more data available to read
+                    if (0 == CHARS_PENDING(pCircBuf))
+                        atomic_set(&pCharDevice->data_ready_to_read, 0);
 
                 } else {
                     printk(KERN_ERR DEVICE_NODE_NAME": copy_from_user() failed\n");
@@ -205,6 +220,10 @@ drv_write (struct file *file, const char __user * buf, size_t lbuf, loff_t * ppo
                 pCircBuf->head = pCircBuf->head + lbuf;
                 retVal = lbuf;
 
+                // buffer full
+                if (0 == CHARS_FREE(pCircBuf))
+                    atomic_set(&pCharDevice->buffer_ready_to_write, 0);
+
             } else {
                 printk(KERN_ERR DEVICE_NODE_NAME": copy_from_user() failed\n");
                 retVal = -EFAULT;
@@ -221,6 +240,10 @@ drv_write (struct file *file, const char __user * buf, size_t lbuf, loff_t * ppo
                     pCircBuf->head = lbuf - charsFreeToEnd;
                     retVal = lbuf;
 
+                    // buffer full
+                    if (0 == CHARS_FREE(pCircBuf))
+                        atomic_set(&pCharDevice->buffer_ready_to_write, 0);
+
                 } else {
                     printk(KERN_ERR DEVICE_NODE_NAME": copy_from_user() failed\n");
                     retVal = -EFAULT;
@@ -232,6 +255,8 @@ drv_write (struct file *file, const char __user * buf, size_t lbuf, loff_t * ppo
                 goto out;
             }
         }
+
+        atomic_set(&pCharDevice->data_ready_to_read, 1);
 
         printk(KERN_INFO DEVICE_NODE_NAME": write success: nbytes=%d, head = %d, tail = %d, pos=%d\n", 
             retVal, pCircBuf->head, pCircBuf->tail, (int)*ppos);
@@ -247,14 +272,6 @@ drv_write (struct file *file, const char __user * buf, size_t lbuf, loff_t * ppo
 
     return retVal;
 }
-
-// poll design
-// http://www.makelinux.net/ldd3/chp-6-sect-3
-static unsigned int drv_poll(struct file *file, poll_table *wait)
-{
-    unsigned int retVal = (POLLIN | POLLRDNORM);
-
-    printk(KERN_INFO DEVICE_NODE_NAME": drv_poll()\n");
 
 /*
 POLLIN
@@ -285,27 +302,34 @@ POLLWRBAND
 Like POLLRDBAND, this bit means that data with nonzero priority can be written to the device. Only the datagram implementation of poll uses this bit, since a datagram can transmit out-of-band data.
 */
 
-// logger code
-    // struct logger_reader *reader;
-    // struct logger_log *log;
-    // unsigned int ret = POLLOUT | POLLWRNORM;
+// poll design
+// http://www.makelinux.net/ldd3/chp-6-sect-3
+static unsigned int drv_poll(struct file *file, poll_table *wait)
+{
+    unsigned int retVal = 0;
+    struct CanonicalCharDevice* pCharDevice = file->private_data;
+    // struct circ_buf* pCircBuf = &(pCharDevice->circBuf);
 
-    // if (!(file->f_mode & FMODE_READ))
-    //     return ret;
+    printk(KERN_INFO DEVICE_NODE_NAME": drv_poll()\n");
 
-    // reader = file->private_data;
-    // log = reader->log;
+    if (down_interruptible(&(pCharDevice->sem))) {
+        return -ERESTARTSYS; 
+    }
 
-    // poll_wait(file, &log->wq, wait);
+    printk(KERN_INFO DEVICE_NODE_NAME": starting poll waits calls\n");
+    poll_wait(file, &pCharDevice->wq_read, wait);
+    poll_wait(file, &pCharDevice->wq_write, wait);
+    printk(KERN_INFO DEVICE_NODE_NAME": finished poll waits calls\n");
 
-    // mutex_lock(&log->mutex);
-    // if (!reader->r_all)
-    //     reader->r_off = get_next_entry_by_uid(log,
-    //         reader->r_off, current_euid());
+    // circular buffer read
+    if (atomic_read(&pCharDevice->data_ready_to_read))
+        retVal |= POLLIN | POLLRDNORM;  // data available for reading without blocking
 
-    // if (log->w_off != reader->r_off)
-    //     ret |= POLLIN | POLLRDNORM;
-    // mutex_unlock(&log->mutex);
+    // circular buffer write
+    if (atomic_read(&pCharDevice->buffer_ready_to_write))
+        retVal |= POLLOUT | POLLWRNORM; // data can be written without blocking
+
+    up(&(pCharDevice->sem));
 
     return retVal;
 }
@@ -574,7 +598,7 @@ canonical_char_drv_init (void)
 
     int err = -1;
 
-	printk (KERN_INFO "PRINTK_TAG: canonical_char_drv_init() %s\n", DEVICE_NODE_NAME);
+    printk (KERN_INFO "PRINTK_TAG: canonical_char_drv_init() %s\n", DEVICE_NODE_NAME);
 
     // allocate dev to hold major and minor numbers
 	err = alloc_chrdev_region(&dev, 0, 1, DEVICE_NODE_NAME);
@@ -584,8 +608,8 @@ canonical_char_drv_init (void)
 	}
 
     // extract major and minor from assigned dev
-	major = MAJOR(dev);
-	minor = MINOR(dev); 
+    major = MAJOR(dev);
+    minor = MINOR(dev); 
 
     // allocate device object
     pCanonicalCharDevice = kmalloc(sizeof(struct CanonicalCharDevice), GFP_KERNEL);
@@ -625,6 +649,10 @@ canonical_char_drv_init (void)
         printk(KERN_ALERT DEVICE_NODE_NAME": Failed to create attribute val."); 
         goto destroy_device;
     }
+
+    init_waitqueue_head(&pCanonicalCharDevice->wq_read);
+    init_waitqueue_head(&pCanonicalCharDevice->wq_write);
+    printk(KERN_INFO DEVICE_NODE_NAME": waitqueue's created\n");
 
     // for sysfs device cache
     dev_set_drvdata(pDevice, pCanonicalCharDevice); 
