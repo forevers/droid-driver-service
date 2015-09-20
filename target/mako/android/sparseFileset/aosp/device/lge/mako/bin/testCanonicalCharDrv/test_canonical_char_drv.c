@@ -6,17 +6,44 @@
 #include <hardware/hardware.h>
 
 #define WRITE_CHUNK_SIZE 10
-#define READ_CHUNK_SIZE 3
+#define READ_CHUNK_SIZE WRITE_CHUNK_SIZE
+
+static uint8_t writeBuffer_[WRITE_CHUNK_SIZE];
+static uint8_t readBuffer_[READ_CHUNK_SIZE];
+
+static void advance_write_buffer(void) {
+
+    for (int i = 0, j = writeBuffer_[WRITE_CHUNK_SIZE-1]; i < WRITE_CHUNK_SIZE; ++i, ++j) {
+        writeBuffer_[i] = j;
+    }
+}
+
+static int read_from_fifo(struct canonical_char_drv_device_t* pDevice, uint8_t* pReadBuffer, uint32_t size) {
+
+    int ret;
+
+    if ((ret = pDevice->read_buffer(pDevice, pReadBuffer, size)) < 0) {
+        fprintf(stderr, "Failed to read buffer: %s", strerror(errno));
+    } else if (ret > 0) {
+        printf("read buffer success\n");
+        printf("readBuffer_: ");
+        for (int i = 0; i < READ_CHUNK_SIZE; ++i) {
+            printf("%d ,", pReadBuffer[i]);
+        }
+        printf("\n");
+    } else {
+        printf("read buffer timeout\n");
+    }
+
+    return ret;
+}
 
 int main (int argc, char* argv[]) {
 
     hw_module_t* module;
 
-    uint8_t writeBuffer[WRITE_CHUNK_SIZE];
-    uint8_t readBuffer[READ_CHUNK_SIZE];
-
     for (int i = 0; i < WRITE_CHUNK_SIZE; ++i) {
-        writeBuffer[i] = i;
+        writeBuffer_[i] = i;
     }
     
     int ret = hw_get_module(CANONICAL_CHR_DRV_MODULE_ID, (hw_module_t const**)&module);
@@ -40,8 +67,14 @@ int main (int argc, char* argv[]) {
             printf("size: %d, capacity: %d\n", size, capacity);
 
             if (size >= 0 && capacity >= 0) {
+                printf("wait_for_data() read into readBuffer_ addr: %x\n");
+                if ((ret = dev->wait_for_buffer_data(dev, readBuffer_, WRITE_CHUNK_SIZE, 5000)) < 0) {
+                    fprintf(stderr, "Failed to read buffer: %s\n", strerror(errno));
+                } else if (ret == 0) {
+                    fprintf(stderr, "timeout waiting for data\n");
+                }
 
-                if ((ret = dev->write_buffer(dev, writeBuffer, WRITE_CHUNK_SIZE)) < 0) {
+                if ((ret = dev->write_buffer(dev, writeBuffer_, WRITE_CHUNK_SIZE)) < 0) {
                     fprintf(stderr, "Failed to write buffer: %s", strerror(errno));
                     goto closeFile;
                 } else {
@@ -54,6 +87,29 @@ int main (int argc, char* argv[]) {
                 } else {
                     fprintf(stderr, "Failed to flush buffer: %s", strerror(errno));
                     ret = -1;
+                }
+
+                advance_write_buffer();
+
+                if ((ret = dev->write_buffer(dev, writeBuffer_, WRITE_CHUNK_SIZE)) < 0) {
+                    fprintf(stderr, "Failed to write buffer: %s", strerror(errno));
+                    goto closeFile;
+                } else {
+                    printf("write buffer success\n");
+                }
+
+                if ((ret = dev->read_buffer(dev, readBuffer_, WRITE_CHUNK_SIZE)) < 0) {
+                    fprintf(stderr, "Failed to read buffer: %s\n", strerror(errno));
+                    goto closeFile;
+                } else if (ret > 0) {
+                    printf("read buffer success\n");
+                    printf("readBuffer_: ");
+                    for (int i = 0; i < READ_CHUNK_SIZE; ++i) {
+                        printf("%d ,", readBuffer_[i]);
+                    }
+                    printf("\n");
+                } else {
+                    printf("read buffer timeout\n");
                 }
 
             } else {
