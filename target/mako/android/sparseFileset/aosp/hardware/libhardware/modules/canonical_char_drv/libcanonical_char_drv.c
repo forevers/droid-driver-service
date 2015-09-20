@@ -1,7 +1,6 @@
 // LOG_NDEBUG 0 enables verbose debugging
 //#define LOG_NDEBUG 1
 #define LOG_NDEBUG 0
-//#define LOG_FILE "/dev/log/main"
 #define CANONICAL_CHAR_DRV_FILE "/dev/canonical_char_drv"
 #define LOG_TAG "CanonicalCharDrv"
 
@@ -89,7 +88,7 @@ static int write_buffer (struct canonical_char_drv_device_t* dev, uint8_t* pBuff
 
 static int read_buffer (struct canonical_char_drv_device_t* dev, uint8_t* pBuffer, int size) {
 
-    SLOGV("read from %s", CANONICAL_CHAR_DRV_FILE);
+    SLOGV("read %d bytes from %s at address %x", size, CANONICAL_CHAR_DRV_FILE, pBuffer);
 
     int logfd = open(CANONICAL_CHAR_DRV_FILE, O_RDONLY);
     if (logfd < 0) {
@@ -102,12 +101,11 @@ static int read_buffer (struct canonical_char_drv_device_t* dev, uint8_t* pBuffe
     }
 }
 
+static int wait_for_buffer_data (struct canonical_char_drv_device_t* dev, uint8_t* pBuffer, int size, int timeout) {
 
-static int wait_for_buffer_data (struct canonical_char_drv_device_t* dev, int timeout) {
+    SLOGV("Waiting for %d bytes data from %s with timeout: %d", size, CANONICAL_CHAR_DRV_FILE, timeout);
 
-    SLOGV("Waiting for buffer data on %s with timeout=%d", CANONICAL_CHAR_DRV_FILE, timeout);
-
-    int ret;
+    int ret = -1;
     struct pollfd pfd;
     pfd.fd = dev->fd;
     pfd.events = POLLIN;
@@ -115,14 +113,20 @@ static int wait_for_buffer_data (struct canonical_char_drv_device_t* dev, int ti
     ret = poll(&pfd, 1, timeout);
     if (ret < 0) {
         SLOGE("Failed to poll %s: %s", CANONICAL_CHAR_DRV_FILE, strerror(errno));
-        return -1;
     } else if (ret == 0) {
         SLOGV("Waiting for buffer data timed out");
-        return 0; /* timeout */
     } else {
-        return 0;
+        //ret = read_buffer(dev, pBuffer, size);
+        ret = read(dev->fd, pBuffer, size);
+        if (ret < 0) {
+            SLOGE("Failed to read %s: %s", CANONICAL_CHAR_DRV_FILE, strerror(errno));
+        } else if (ret == 0) {
+            SLOGE("Unexpected EOF on reading %s", CANONICAL_CHAR_DRV_FILE);
+        } else {
+            SLOGV("read %d from %s", ret, CANONICAL_CHAR_DRV_FILE);
+        }
 
-        SLOGV("Waiting for buffer data driver returned ... do something here");
+        //SLOGV("Waiting for buffer data driver returned ... do something here");
 
         // /* consume all of the available data */
         // unsigned char buf[LOGGER_ENTRY_MAX_LEN + 1] __attribute__((aligned(4)));
@@ -151,8 +155,9 @@ static int wait_for_buffer_data (struct canonical_char_drv_device_t* dev, int ti
         //     }
         //   }
         // }
-
     }
+
+    return ret;
 }
 
 static int close_canonicalchardrv (struct canonical_char_drv_device_t* dev) {
