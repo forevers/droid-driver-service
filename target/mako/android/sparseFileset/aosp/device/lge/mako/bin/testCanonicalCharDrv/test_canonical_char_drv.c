@@ -56,30 +56,39 @@ int main (int argc, char* argv[]) {
             int err;
 
             int size, capacity;
-            if ((ret = dev->get_buffer_size(dev, &size))) {
+            if ((size = dev->get_buffer_size(dev)) < 0) {
                 fprintf(stderr, "get_buffer_size() error: %d", ret);
                 goto closeFile;
             }
-            if ((ret = dev->get_buffer_capacity(dev, &capacity))) {
+            if ((capacity = dev->get_buffer_capacity(dev)) < 0) {
                 fprintf(stderr, "get_buffer_capacity() error: %d", ret);
                 goto closeFile;
             }
             printf("size: %d, capacity: %d\n", size, capacity);
 
             if (size >= 0 && capacity >= 0) {
-                printf("wait_for_data() read into readBuffer_ addr: %x\n");
+                printf("wait_for_buffer_data() read into readBuffer_\n");
                 if ((ret = dev->wait_for_buffer_data(dev, readBuffer_, WRITE_CHUNK_SIZE, 5000)) < 0) {
                     fprintf(stderr, "Failed to read buffer: %s\n", strerror(errno));
                 } else if (ret == 0) {
                     fprintf(stderr, "timeout waiting for data\n");
+                } else {
+                    printf("read %d bytes\n", ret);
                 }
 
+                // write to buffer
                 if ((ret = dev->write_buffer(dev, writeBuffer_, WRITE_CHUNK_SIZE)) < 0) {
                     fprintf(stderr, "Failed to write buffer: %s", strerror(errno));
                     goto closeFile;
                 } else {
                     printf("write buffer success\n");
                 }
+                // get current size
+                if ((size = dev->get_buffer_size(dev)) < 0) {
+                    fprintf(stderr, "get_buffer_size() error: %d", ret);
+                    goto closeFile;
+                }
+                printf("post write buffer size: %d\n", size);
 
                 if (dev->flush_buffer(dev) == 0) {
                     printf("Flushed buffer. Previously it was consuming %d of %d bytes\n", size, capacity);
@@ -88,6 +97,13 @@ int main (int argc, char* argv[]) {
                     fprintf(stderr, "Failed to flush buffer: %s", strerror(errno));
                     ret = -1;
                 }
+                // get current size
+                if ((size = dev->get_buffer_size(dev)) < 0) {
+                    fprintf(stderr, "get_buffer_size() error: %d", ret);
+                    goto closeFile;
+                }
+                printf("post flush buffer size: %d\n", size);
+
 
                 advance_write_buffer();
 
