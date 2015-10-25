@@ -208,6 +208,8 @@ drv_write (struct file *file, const char __user * buf, size_t lbuf, loff_t * ppo
         return -ERESTARTSYS; 
     }
 
+    // single or dual segment write
+    // TODO allow partial writes returning number byte writted
     if (lbuf <= CHARS_FREE(pCircBuf)) {
 
         int charsFreeToEnd = CHARS_FREE_TO_END(pCircBuf);
@@ -219,6 +221,7 @@ drv_write (struct file *file, const char __user * buf, size_t lbuf, loff_t * ppo
 
                 pCircBuf->head = pCircBuf->head + lbuf;
                 retVal = lbuf;
+                pCharDevice->bufSize += lbuf;
 
                 // buffer full
                 if (0 == CHARS_FREE(pCircBuf))
@@ -235,10 +238,15 @@ drv_write (struct file *file, const char __user * buf, size_t lbuf, loff_t * ppo
             // dual segment write into circular buffer
             if (!copy_from_user(pCircBuf->buf + pCircBuf->head, buf, charsFreeToEnd)) {
 
+                pCircBuf->head = 0;
+                retVal = charsFreeToEnd;
+                pCharDevice->bufSize += charsFreeToEnd;
+
                 if (copy_from_user(pCircBuf->buf, buf, lbuf - charsFreeToEnd)) {
 
                     pCircBuf->head = lbuf - charsFreeToEnd;
                     retVal = lbuf;
+                    pCharDevice->bufSize += (lbuf - charsFreeToEnd);
 
                     // buffer full
                     if (0 == CHARS_FREE(pCircBuf))
