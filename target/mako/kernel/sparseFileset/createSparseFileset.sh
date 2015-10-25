@@ -9,7 +9,6 @@ KERNEL_ROOTDIR=~/aospDevelopment/kernelMako/msm
 # modified files
 mkdir -p ./msm/android/configs
 mkdir -p ./msm/arch/arm/configs
-mkdir -p ./msm/drivers
 mkdir -p ./msm/drivers/staging/android
 
 cp $KERNEL_ROOTDIR/android/configs/android-base.cfg ./msm/android/configs/android-base.cfg
@@ -20,7 +19,6 @@ cp $KERNEL_ROOTDIR/drivers/staging/android/Kconfig ./msm/drivers/staging/android
 cp $KERNEL_ROOTDIR/drivers/staging/android/Makefile ./msm/drivers/staging/android/Makefile
 
 # new files
-mkdir -p ./msm/drivers
 mkdir -p ./msm/drivers/canonical_char_drv
 
 cp $KERNEL_ROOTDIR/drivers/canonical_char_drv/canonical_char_drv.c ./msm/drivers/canonical_char_drv/canonical_char_drv.c
