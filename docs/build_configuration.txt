@@ -134,9 +134,9 @@
 		// command line test of android HAL module
 		$ adb root
 		$ adb shell /system/bin/test_canonical_char_drv
-			// inspect shell output, kernal and logcat outpus
-		$ adb shell dmesg > eraseme
-		$ adb shell logcat *:V > logcatEraseme
+			// inspect shell output, kernel and logcat outpus
+		$ adb shell dmesg > dmesgEraseme
+		$ adb shell logcat -d *:V > logcatEraseme
  
 
 ****************************

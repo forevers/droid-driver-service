@@ -15,30 +15,66 @@
             │   │   ├── gitDiffCached
             │   │   └── Readme.md
             │   └── sparseFileset
-            │       ├── createSparseFileset.sh
-            │       └── aosp
-            │           ├── device/lge/mako
-            │           │              ├── device.mk
+            │       ├── aosp
+            │       │   ├── device/lge/mako
+            │       │   │              ├── bin
+            │       │   │              │   ├── Android.mk
+            │       │   │              │   └── testCanonicalCharDrv
+            │       │   │              │        ├── Android.mk
+            │       │   │              │        └── test_canonical_char_drv.c
+            │       │   │              ├── device.mk
+            │       │   │              ├── init.mako.rc
+            │       │   │              └── framework
+            │       │   │                  ├── Android.mk
+            │       │   │                  └── libcanonical_char_io_jni
+            │       │   │                      ├── Android.mk
+            │       │   │                      ├── java
+            │       │   │                      │   ├── Android.mk
+            │       │   │                      │   ├── com
+            │       │   │                      │   │   └── severs
+            │       │   │                      │   │       └── android
+            │       │   │                      │   │           └── lib
+            │       │   │                      │   │               └── charactor_io
+            │       │   │                      │   │                   ├── LibCharactorIOException.java
+            │       │   │                      │   │                   ├── LibCharactorIO.java
+            │       │   │                      │   │                   └── Main.java
+            │       │   │                      │   └── com.severs.android.lib.charactor_io.xml
+            │       │   │                      └── jni
+            │       │   │                          ├── Android.mk
+            │       │   │                          ├── com_severs_android_lib_charactor_io_LibCharactorIO.cpp
+            │       │   │                          └── com_severs_android_lib_charactor_io_LibCharactorIO.h
+            │       │   └── hardware
+            │       │       └── libhardware
+            │       │           ├── include
+            │       │           │   └── hardware
+            │       │           │       └── canonical_char_drv.h
+            │       │           └── modules
+            │       │               ├── Android.mk
+            │       │               └── canonical_char_drv
+            │       │                   ├── Android.mk
+            │       │                   └── libcanonical_char_drv.c
+            │       └── createSparseFileset.sh
             └── kernel
                 ├── patch
-                │   ├── gitDiff
-                │   ├── gitDiffCached
-                │   └── Readme.md
+                │   ├── gitDiff
+                │   ├── gitDiffCached
+                │   └── Readme.md
                 └── sparseFileset
                     ├── createSparseFileset.sh
                     └── msm
                         ├── android
-                        │   └── configs
-                        │       └── android-base.cfg
+                        │   └── configs
+                        │       └── android-base.cfg
                         ├── arch
-                        │   └── arm
-                        │       └── configs
-                        │           └── mako_defconfig
+                        │   └── arm
+                        │       └── configs
+                        │           └── mako_defconfig
                         └── drivers
                             ├── canonical_char_drv
-                            │   ├── canonical_char_drv.c
-                            │   ├── Kconfig
-                            │   └── Makefile
+                            │   ├── canonical_char_drv.c
+                            │   ├── canonical_char_drv.h
+                            │   ├── Kconfig
+                            │   └── Makefile
                             ├── Kconfig
                             ├── Makefile
                             └── staging
@@ -48,28 +84,45 @@
 
 
 
-******************************************
+*******************************************
 ***** Android Build File Descriptions *****
-******************************************
+*******************************************
+
+droid-driver-service/target/mako/android/sparseFileset/aosp/device/lge/mako/bin :
+    Android.mk - recursive make
+    /testCanonicalCharDrv/Android.mk - makefile for canonical_char_drv module test
+    /testCanonicalCharDrv/test_canonical_char_drv.c - canonical_char_drv module test
 
 droid-driver-service/target/mako/android/sparseFileset/aosp/device/lge/mako :
-	device.mk - adds chanonical_char_drv package and its test package, 
-		PRODUCT_PACKAGES += canonical_char_drv.default, PRODUCT_PACKAGES += test_canonical_char_drv
-	init.mako.rc - chmod module to 0x666
+    device.mk - adds chanonical_char_drv package and its test package, 
+        PRODUCT_PACKAGES += (canonical_char_drv.default, test_canonical_char_drv, libcharactor_io_jni)
+    init.mako.rc - chmod module to 0x666
 
-droid-driver-service/target/mako/android/sparseFileset/aosp/device/lge/mako/bin/testCanonicalCharDrv :
-	Android.mk - makefile for canonical_char_drv module test
-	test_canonical_char_drv.c - canonical_char_drv module test
+droid-driver-service/target/mako/android/sparseFileset/aosp/device/lge/mako/framework :
+    Android.mk - recursive make
+    /libcanonical_char_io_jni :
+        Android.mk - recursive make
+        /java :
+            Android.mk - build HAL Java library and docs for com.severs.android.lib.charactor_io, Copy com.severs.android.lib.charactor_io.xml to /system/etc/permissions/
+            /com/severs/android/lib/charactor_io :
+                LibCharactorIOException.java - charactor io java exception
+                LibCharactorIO.java - charactor io library java interface
+                Main.java - test class for excersizing LibCharactorIO.java interface
+            com.severs.android.lib.charactor_io.xml - exposes Java library name to applications via a name/file mapping
+        /jni :
+            Android.mk - build libcharactor_io_jni.so native library module
+            com_severs_android_lib_charactor_io_LibCharactorIO.cpp - Java interface to native library
+            com_severs_android_lib_charactor_io_LibCharactorIO.h - javah generated jni header
 
 droid-driver-service/target/mako/android/sparseFileset/aosp/hardware/libhardware/include/hardware :
-	canonical_char_drv.h - cananical charactor driver android HAL interface definition
+    canonical_char_drv.h - cananical charactor driver android HAL interface definition
 
 droid-driver-service/target/mako/android/sparseFileset/aosp/hardware/libhardware/modules :
-	Android.mk - add canonical_char_drv to hardware_modules list
+    Android.mk - add canonical_char_drv to hardware_modules list
 
 droid-driver-service/target/mako/android/sparseFileset/aosp/hardware/libhardware/modules/canonical_char_drv :
-	Android.mk - canonical_char_drv.default make file
-	libcanonical_char_drv.c - Android HAL module, makes call into the driver and exposes HAL interface to platform
+    Android.mk - canonical_char_drv.default make file
+    libcanonical_char_drv.c - Android HAL module, makes call into the driver and exposes HAL interface to platform
 
 
 ******************************************
@@ -77,39 +130,59 @@ droid-driver-service/target/mako/android/sparseFileset/aosp/hardware/libhardware
 ******************************************
 
 droid-driver-service/docs :
-	Documentation directory
+    Documentation directory
 
 droid-driver-service/target/mako/kernel/patch :
-	Patches to AOSP
-	gitDiff - contains modified kernel file changes
-	gitDiffCached - contains newley added kernel files
+    Patches to AOSP
+    gitDiff - contains modified kernel file changes
+    gitDiffCached - contains newley added kernel files
 
 droid-driver-service/target/mako/kernel/sparseFileset :
-	createSparseFileset.sh - copy all touched and newly created AOSP files from full AOSP directoy to this
-	sparseFileset directory
+    createSparseFileset.sh - copy all touched and newly created AOSP files from full AOSP directoy to this
+    sparseFileset directory
 
 droid-driver-service/target/mako/kernel/sparseFileset/msm/android/configs :
-	android-base.cfg - adds the driver to the build, CONFIG_CANONICAL_CHAR_DRV=y
+    android-base.cfg - adds the driver to the build, CONFIG_CANONICAL_CHAR_DRV=y
 
 droid-driver-service/target/mako/kernel/sparseFileset/msm/arch/arm/configs :
-	mako_defconfig - adds the driver to the make build CONFIG_CANONICAL_CHAR_DRV=y
-	// TODO this is probably redundant
+    mako_defconfig - adds the driver to the make build CONFIG_CANONICAL_CHAR_DRV=y
+    // TODO this is probably redundant
 
 droid-driver-service/target/mako/kernel/sparseFileset/msm/drivers/canonical_char_drv :
-	New kernel driver directory
-	canonical_char_drv.c - new canonical charactor driver installed in dev/ and /sys/class.
-	TODO add debugfs registration
-	canonical_char_drv.h - 
-	Kconfig - driver Kconfig, CANONICAL_CHAR_DRV
+    New kernel driver directory
+    canonical_char_drv.c - new canonical charactor driver installed in dev/ and /sys/class.
+    TODO add debugfs registration
+    canonical_char_drv.h - 
+    Kconfig - driver Kconfig, CANONICAL_CHAR_DRV
     Makefile - driver makefile
 
 droid-driver-service/target/mako/kernel/sparseFileset/msm/drivers :
-	KCconfig - source the driver, source "drivers/canonical_char_drv/Kconfig"
-	Makefile - higher level makefile, built in driver
+    KCconfig - source the driver, source "drivers/canonical_char_drv/Kconfig"
+    Makefile - higher level makefile, built in driver
 
 droid-driver-service/target/mako/kernel/sparseFileset/msm/drivers/staging/android :
-	TODO review the staging files
-	Kconfig - 
-	Makefile -
+    TODO review the staging files
+    Kconfig - 
+    Makefile -
 
+*****************************************
+***** Service Component Interaction *****
+*****************************************
 
+driver interfaces :
+
+    /proc/canonical_char_drv - echo to and cat the driver procfs driver exposure
+
+    /sys/class/canonical_char_drv/canonical_char_drv/mode :
+        mode - echo to and cat the driver sysfs driver exposure
+        power
+        subsystem -> ../../../../class/canonical_char_drv
+        uevent
+
+    /system/bin/test_canonical_char_drv - CL executable to test canonical_char_drv driver, hw_get_module() to return module to open()
+
+Android HAL library (driver interface) :
+
+    /system/lib/hw/canonical_char_drv.default.so - linux open(), read(), close() calls on driver and exposes the canonicalchardrv_module_methods::open_canonicalchardrv() interace to upper layer
+
+    /system/lib/libcharactor_io_jni.so - jni library which opens and access canonical_char_drv.default.so HAL library
