@@ -217,6 +217,10 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += canonical_char_drv.default
 # add command line test of canonical_char_drv.default
 PRODUCT_PACKAGES += test_canonical_char_drv
+# add canonical char HAL JNI library
+PRODUCT_PACKAGES += libcharactor_io_jni
+# add HAL Java/Jni access wrapper
+PRODUCT_PACKAGES += com.severs.android.lib.charactor_io com.severs.android.lib.charactor_io.xml libcharactor_io_jni
 
 # add severs package
 #PRODUCT_PACKAGES += severslog.default

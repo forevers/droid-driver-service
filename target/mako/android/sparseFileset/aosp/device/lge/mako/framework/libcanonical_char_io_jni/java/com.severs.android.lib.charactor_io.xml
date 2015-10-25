@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<permissions>
+  <library name="com.severs.android.lib.charactor_io"
+    file="/system/framework/com.severs.android.lib.charactor_io.jar"/>
+</permissions>

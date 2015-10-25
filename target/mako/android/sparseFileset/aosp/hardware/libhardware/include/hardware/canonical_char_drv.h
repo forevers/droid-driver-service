@@ -38,14 +38,14 @@ struct canonical_char_drv_device_t {
    *
    * Returns: total buffer capacity, < 0 on failure
    */
-  int (*get_buffer_capacity)(struct canonical_char_drv_device_t* dev, int* capacity);
+  int (*get_buffer_capacity)(struct canonical_char_drv_device_t* dev);
 
   /*
    * Get the used buffer size
    *
    * Returns: used buffer size, < 0 on failure
    */
-  int (*get_buffer_size)(struct canonical_char_drv_device_t* dev, int* size);
+  int (*get_buffer_size)(struct canonical_char_drv_device_t* dev);
 
   /*
    * Write to the buffer

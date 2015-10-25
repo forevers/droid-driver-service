@@ -6,10 +6,6 @@
 
 #include <hardware/canonical_char_drv.h>
 #include <cutils/log.h>
-//// sde - logger.h not here
-////#include <cutils/logger.h>
-////./system/core/include/log/logger.h
-//#include <log/logger.h>   
 
 #include <fcntl.h>
 #include <poll.h>
@@ -60,14 +56,27 @@ static int flush_buffer (struct canonical_char_drv_device_t* dev) {
     return ioctl_buffer(O_WRONLY, FLUSH_BUFFER);
 }
 
-static int get_buffer_capacity (struct canonical_char_drv_device_t* dev, int* pCapacity) {
+static int get_buffer_capacity (struct canonical_char_drv_device_t* dev) {
+    int capacity;
     SLOGV("Getting buffer capacity of %s", CANONICAL_CHAR_DRV_FILE);
-    return ioctl_buffer_read(O_RDONLY, GET_BUFFER_CAPACITY, pCapacity);
+    int retVal = ioctl_buffer_read(O_RDONLY, GET_BUFFER_CAPACITY, &capacity);
+    if (retVal >= 0) {
+        return capacity;
+    } else {
+        return retVal;
+    }
 }
 
-static int get_buffer_size (struct canonical_char_drv_device_t* dev, int* pSize) {
+static int get_buffer_size (struct canonical_char_drv_device_t* dev) {
+    int size;
+    int retVal;
     SLOGV("Getting used buffer size of %s", CANONICAL_CHAR_DRV_FILE);
-    return ioctl_buffer_read(O_RDONLY, GET_BUFFER_SIZE, pSize);
+    retVal = ioctl_buffer_read(O_RDONLY, GET_BUFFER_SIZE, &size);
+    if (retVal >= 0) {
+        return size;
+    } else {
+        return retVal;
+    }
 }
 
 static int write_buffer (struct canonical_char_drv_device_t* dev, uint8_t* pBuffer, int size) {
@@ -125,8 +134,6 @@ static int wait_for_buffer_data (struct canonical_char_drv_device_t* dev, uint8_
         } else {
             SLOGV("read %d from %s", ret, CANONICAL_CHAR_DRV_FILE);
         }
-
-        //SLOGV("Waiting for buffer data driver returned ... do something here");
 
         // /* consume all of the available data */
         // unsigned char buf[LOGGER_ENTRY_MAX_LEN + 1] __attribute__((aligned(4)));
