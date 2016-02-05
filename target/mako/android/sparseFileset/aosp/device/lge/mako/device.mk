@@ -221,13 +221,8 @@ PRODUCT_PACKAGES += test_canonical_char_drv
 PRODUCT_PACKAGES += libcharactor_io_jni
 # add HAL Java/Jni access wrapper
 PRODUCT_PACKAGES += com.severs.android.lib.charactor_io com.severs.android.lib.charactor_io.xml libcharactor_io_jni
-
-# add severs package
-#PRODUCT_PACKAGES += severslog.default
-# severs add CL test of severslog.default
-#PRODUCT_PACKAGES += severslog
-# severs add daemon test of severslog.default
-#PRODUCT_PACKAGES += severslogd
+# add android app to directly access Java wrapped JNI library
+PRODUCT_PACKAGES += DirectCharacterIOAccess
 
 # GPS configuration
 PRODUCT_COPY_FILES += \
