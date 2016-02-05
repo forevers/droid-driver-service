@@ -114,7 +114,7 @@ int main (int argc, char* argv[]) {
                     printf("write buffer success\n");
                 }
 
-                if ((ret = dev->read_buffer(dev, readBuffer_, WRITE_CHUNK_SIZE)) < 0) {
+                if ((ret = dev->read_buffer(dev, readBuffer_, READ_CHUNK_SIZE)) < 0) {
                     fprintf(stderr, "Failed to read buffer: %s\n", strerror(errno));
                     goto closeFile;
                 } else if (ret > 0) {
