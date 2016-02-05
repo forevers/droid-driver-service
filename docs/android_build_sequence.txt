@@ -53,8 +53,8 @@
         $ sudo update-alternatives --install "/usr/bin/java" "java" "/usr/lib/jvm/jdk1.6.0_45/bin/java" 1
         $ sudo update-alternatives --install "/usr/bin/javac" "javac" "/usr/lib/jvm/jdk1.6.0_45/bin/javac" 1
         $ sudo update-alternatives --install "/usr/bin/javap" "javap" "/usr/lib/jvm/jdk1.6.0_45/bin/javap" 1
-        $ sudo update-alternatives --install "/usr/bin/jar" "jar" "/usr/lib/jvm/jdk1.6.0_45/bin/jar" 1
-        $ sudo update-alternatives --install "/usr/bin/javadoc" "javadoc" "/usr/lib/jvm/jdk1.6.0_45/bin/javadoc" 1
+        $ sudo update-alternatives --install "/usr/bin/jar" "jar" "/usr/lib/jvm/jdk1.6.0_45/bin/jar" 1
+        $ sudo update-alternatives --install "/usr/bin/javadoc" "javadoc" "/usr/lib/jvm/jdk1.6.0_45/bin/javadoc" 1
 
 *****************************
 ***** AOSP Installation *****
@@ -90,18 +90,21 @@
     $ lunch aosp_mako-userdebug
     $ make –j6
     $ adb reboot bootloader 
-	// TODO fix fastboot tool to run without sudo
-	$ sudo ~/aospDevelopment/aosp/out/host/linux-x86/bin/fastboot -w -pmako flashall
+    // TODO fix fastboot tool to run without sudo
+    $ sudo ~/aospDevelopment/aosp/out/host/linux-x86/bin/fastboot -w -pmako flashall
 
-	// verify test of HAL module
-	$ adb shell
-	shell@mako:/ $ ls -l /system/lib/hw                                            
-		...
-		-rw-r--r-- root     root         5348 2015-05-29 17:46 canonical_char_drv.default.so
+    // verify test of HAL module
+    $ adb shell
+    shell@mako:/ $ ls -l /system/lib/hw
+        ...
+        -rw-r--r-- root     root         5348 2015-05-29 17:46 canonical_char_drv.default.so
 
-	shell@mako:/ $ ls -l /system/bin                                               
-		...
-		-rwxr-xr-x root     shell        5368 2015-06-14 21:34 test_canonical_char_drv
+    shell@mako:/ $ ls -l /system/bin
+        ...
+        srrw-r--rwxr-xr-x root     shell        5368 2015-06-14 21:34 test_canonical_char_drv
+
+    // run CL test of driver
+    shell@mako:/ $ /system/bin/test_canonical_char_drv
 
 **********************************************
 ***** Android Platform Service Additions *****
@@ -114,6 +117,7 @@
 
 device/lge/mako/framework/libcanonical_char_io_jni/jni
 
+// create jni header file based on class API
 $ javah -jni -d device/lge/mako/framework/libcanonical_char_io_jni/jni/ -classpath out/target/common/obj/JAVA_LIBRARIES/com.severs.android.lib.charactor_io_intermediates/classes.jar com.severs.android.lib.charactor_io.LibCharactorIO
 
 - make HAL library
@@ -121,9 +125,11 @@ $ cd ~/aospDevelopment/aosp/device/lge/mako/framework/libcanonical_char_io_jni/j
 $ mm com.severs.android.lib.charactor_io com.severs.android.lib.charactor_io.xml
 
 - run Main java object to test the jni HAL wrapper
+$ adb reboot bootloader
+$ sudo ~/aospDevelopment/aosp/out/host/linux-x86/bin/fastboot boot mynewimage.img
 $ adb root
 $ adb shell logcat -c // to clear logcat buffer if desired
 $ adb shell dalvikvm -cp /system/framework/com.severs.android.lib.charactor_io.jar com.severs.android.lib.charactor_io.Main
 $ adb shell logcat -d *:V > logcatEraseme
 $ adb shell dmesg > dmesgEraseme
-    
+

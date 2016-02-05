@@ -9,8 +9,8 @@
     ├── README.md
     └── target
         └── mako
-			├── android
-			│   ├── patch
+            ├── android
+            │   ├── patch
             │   │   ├── gitDiff
             │   │   ├── gitDiffCached
             │   │   └── Readme.md
@@ -22,6 +22,23 @@
             │       │   │              │   └── testCanonicalCharDrv
             │       │   │              │        ├── Android.mk
             │       │   │              │        └── test_canonical_char_drv.c
+            │       │   │              ├── custom_apps
+            │       │   │              │   ├── Android.mk
+            │       │   │              │   └── DirectCharacterIOAccess
+            │       │   │              │       ├── Android.mk
+            │       │   │              │       ├── AndroidManifest.xml
+            │       │   │              │       ├── res
+            │       │   │              │       │   ├── layout
+            │       │   │              │       │   │   └── buffer_status.xml
+            │       │   │              │       │   └── values
+            │       │   │              │       │       ├── colors.xml
+            │       │   │              │       │       └── strings.xml
+            │       │   │              │       └── src
+            │       │   │              │           └── com
+            │       │   │              │               └── severs
+            │       │   │              │                   └── android
+            │       │   │              │                       └── directcharacterioaccess
+            │       │   │              │                           └── DirectCharacterIOAccess.java
             │       │   │              ├── device.mk
             │       │   │              ├── init.mako.rc
             │       │   │              └── framework
@@ -93,9 +110,27 @@ droid-driver-service/target/mako/android/sparseFileset/aosp/device/lge/mako/bin 
     /testCanonicalCharDrv/Android.mk - makefile for canonical_char_drv module test
     /testCanonicalCharDrv/test_canonical_char_drv.c - canonical_char_drv module test
 
+droid-driver-service/target/mako/android/sparseFileset/aosp/device/lge/mako/custom_apps :
+    Android.mk - recursive make
+    /DirectCharacterIOAccess :
+        - Android.mk - recursive make
+        - AndroidManifest.xml - DirectCharacterIOAccess application manifest
+        /res :
+            /layout
+                - buffer_status.xml
+            /values :
+                - colors.xml
+                - strings.xml
+        /src/com/severs/android/directcharacterioaccess/DirectCharacterIOAccess.java - direct access test application
+
 droid-driver-service/target/mako/android/sparseFileset/aosp/device/lge/mako :
-    device.mk - adds chanonical_char_drv package and its test package, 
-        PRODUCT_PACKAGES += (canonical_char_drv.default, test_canonical_char_drv, libcharactor_io_jni)
+    device.mk - adds chanonical_char_drv package, chanonical_char_drv test package, and library (Java wrapped JNI) direct access Java test
+        PRODUCT_PACKAGES += (canonical_char_drv.default, test_canonical_char_drv, libcharactor_io_jni, DirectCharactorIOAccess)
+        PRODUCT_PACKAGES += canonical_char_drv.default
+        PRODUCT_PACKAGES += test_canonical_char_drv
+        PRODUCT_PACKAGES += libcharactor_io_jni
+        PRODUCT_PACKAGES += com.severs.android.lib.charactor_io com.severs.android.lib.charactor_io.xml libcharactor_io_jni
+        PRODUCT_PACKAGES += DirectCharacterIOAccess
     init.mako.rc - chmod module to 0x666
 
 droid-driver-service/target/mako/android/sparseFileset/aosp/device/lge/mako/framework :

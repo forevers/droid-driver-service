@@ -131,13 +131,13 @@
             # cat /proc/canonical_char_drv
             # echo '10' > /sys/class/canonical_char_drv/canonical_char_drv/mode
             # cat /sys/class/canonical_char_drv/canonical_char_drv/mode
-		// command line test of android HAL module
-		$ adb root
-		$ adb shell /system/bin/test_canonical_char_drv
-			// inspect shell output, kernel and logcat outpus
-		$ adb shell dmesg > dmesgEraseme
-		$ adb shell logcat -d *:V > logcatEraseme
- 
+        // command line test of android HAL module
+        $ adb root
+        $ adb shell /system/bin/test_canonical_char_drv
+        // inspect shell output, kernel and logcat outpus
+        $ adb shell dmesg > dmesgEraseme
+        $ adb shell logcat -d *:V > logcatEraseme
+
 
 ****************************
 ***** Android Platform *****
@@ -148,6 +148,6 @@
     $ lunch aosp_mako-userdebug
     $ make –j6
     $ adb reboot bootloader 
-	// TODO fix fastboot tool to run without sudo
-	$ sudo ~/aospDevelopment/aosp/out/host/linux-x86/bin/fastboot -w -pmako flashall
-    
+    // TODO fix fastboot tool to run without sudo
+    $ sudo ~/aospDevelopment/aosp/out/host/linux-x86/bin/fastboot -w -pmako flashall
+

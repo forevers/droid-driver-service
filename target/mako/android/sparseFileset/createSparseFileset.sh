@@ -7,6 +7,9 @@
 AOSP_ROOTDIR=~/aospDevelopment/aosp
 
 mkdir -p ./aosp/device/lge/mako/bin/testCanonicalCharDrv
+mkdir -p ./aosp/device/lge/mako/custom_apps/DirectCharacterIOAccess/res/layout
+mkdir -p ./aosp/device/lge/mako/custom_apps/DirectCharacterIOAccess/res/values
+mkdir -p ./aosp/device/lge/mako/custom_apps/DirectCharacterIOAccess/src/com/severs/android/directcharacterioaccess
 mkdir -p ./aosp/device/lge/mako/framework/libcanonical_char_io_jni/java/com/severs/android/lib/charactor_io
 mkdir -p ./aosp/device/lge/mako/framework/libcanonical_char_io_jni/jni
 mkdir -p ./aosp/hardware/libhardware/include/hardware
@@ -22,6 +25,14 @@ cp $AOSP_ROOTDIR/hardware/libhardware/modules/Android.mk ./aosp/hardware/libhard
 
 # new files
 cp $AOSP_ROOTDIR/device/lge/mako/bin/Android.mk ./aosp/device/lge/mako/bin/Android.mk
+cp $AOSP_ROOTDIR/device/lge/mako/custom_apps/Android.mk ./aosp/device/lge/mako/custom_apps/Android.mk
+cp $AOSP_ROOTDIR/device/lge/mako/custom_apps/DirectCharacterIOAccess/Android.mk ./aosp/device/lge/mako/custom_apps/DirectCharacterIOAccess/Android.mk
+cp $AOSP_ROOTDIR/device/lge/mako/custom_apps/DirectCharacterIOAccess/AndroidManifest.xml ./aosp/device/lge/mako/custom_apps/DirectCharacterIOAccess/AndroidManifest.xml
+cp $AOSP_ROOTDIR/device/lge/mako/custom_apps/DirectCharacterIOAccess/res/layout/buffer_status.xml ./aosp/device/lge/mako/custom_apps/DirectCharacterIOAccess/res/layout/buffer_status.xml
+cp $AOSP_ROOTDIR/device/lge/mako/custom_apps/DirectCharacterIOAccess/res/values/colors.xml ./aosp/device/lge/mako/custom_apps/DirectCharacterIOAccess/res/values/colors.xml
+cp $AOSP_ROOTDIR/device/lge/mako/custom_apps/DirectCharacterIOAccess/res/values/strings.xml ./aosp/device/lge/mako/custom_apps/DirectCharacterIOAccess/res/values/strings.xml
+cp $AOSP_ROOTDIR/device/lge/mako/custom_apps/DirectCharacterIOAccess/src/com/severs/android/directcharacterioaccess/DirectCharacterIOAccess.java ./aosp/device/lge/mako/custom_apps/DirectCharacterIOAccess/src/com/severs/android/directcharacterioaccess/DirectCharacterIOAccess.java
+
 cp $AOSP_ROOTDIR/device/lge/mako/bin/testCanonicalCharDrv/Android.mk ./aosp/device/lge/mako/bin/testCanonicalCharDrv/Android.mk
 cp $AOSP_ROOTDIR/device/lge/mako/bin/testCanonicalCharDrv/test_canonical_char_drv.c ./aosp/device/lge/mako/bin/testCanonicalCharDrv/test_canonical_char_drv.c
 
