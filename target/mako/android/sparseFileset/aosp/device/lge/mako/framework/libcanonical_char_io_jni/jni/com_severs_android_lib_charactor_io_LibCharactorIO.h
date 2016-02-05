@@ -58,18 +58,10 @@ JNIEXPORT jint JNICALL Java_com_severs_android_lib_charactor_1io_LibCharactorIO_
 /*
  * Class:     com_severs_android_lib_charactor_io_LibCharactorIO
  * Method:    readBuffer
- * Signature: ()I
+ * Signature: (II)[B
  */
-JNIEXPORT jint JNICALL Java_com_severs_android_lib_charactor_1io_LibCharactorIO_readBuffer
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_severs_android_lib_charactor_io_LibCharactorIO
- * Method:    waitForBufferData
- * Signature: (I)[B
- */
-JNIEXPORT jbyteArray JNICALL Java_com_severs_android_lib_charactor_1io_LibCharactorIO_waitForBufferData
-  (JNIEnv *, jobject, jint);
+JNIEXPORT jbyteArray JNICALL Java_com_severs_android_lib_charactor_1io_LibCharactorIO_readBuffer
+  (JNIEnv *, jobject, jint, jint);
 
 #ifdef __cplusplus
 }
