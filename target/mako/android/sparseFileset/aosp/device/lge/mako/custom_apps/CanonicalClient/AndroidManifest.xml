@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="com.severs.android.canonicalclient">
+  <uses-permission android:name="com.severs.android.canonicalservice.CANONICAL_ACCESS"/>
+  <application android:label="@string/app_name">
+    <uses-library android:name="com.severs.android.service.canonical" android:required="true"/>
+    <activity android:name=".CanonicalActivity" android:label="@string/app_name">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+  </application>
+</manifest>

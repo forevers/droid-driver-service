@@ -63,6 +63,14 @@ JNIEXPORT jint JNICALL Java_com_severs_android_lib_charactor_1io_LibCharactorIO_
 JNIEXPORT jbyteArray JNICALL Java_com_severs_android_lib_charactor_1io_LibCharactorIO_readBuffer
   (JNIEnv *, jobject, jint, jint);
 
+/*
+ * Class:     com_severs_android_lib_charactor_io_LibCharactorIO
+ * Method:    blockForAsyncInput
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_com_severs_android_lib_charactor_1io_LibCharactorIO_blockForAsyncInput
+  (JNIEnv *, jobject, jint);
+
 #ifdef __cplusplus
 }
 #endif

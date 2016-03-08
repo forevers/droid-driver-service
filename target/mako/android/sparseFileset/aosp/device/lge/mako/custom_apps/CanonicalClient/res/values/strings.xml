@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Canonical Client Access</string>
+    <string name="buffer_status">Using %1$d of %2$d bytes of the character io buffer</string>
+    <string name="buffer_write_button">Write Buffer</string>
+    <string name="buffer_read_button">Read Buffer</string>
+    <string name="buffer_flush_button">Flush Buffer</string>
+</resources>

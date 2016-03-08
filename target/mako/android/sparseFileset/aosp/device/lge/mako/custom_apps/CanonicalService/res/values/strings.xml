@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="canonical_permission_label">Canonical access</string>
+  <string name="canonical_permission_description">Applications with this permission will be able
+    to read, write, clear the canonical buffer, and register for buffer state change callbacks.</string>
+</resources>
+

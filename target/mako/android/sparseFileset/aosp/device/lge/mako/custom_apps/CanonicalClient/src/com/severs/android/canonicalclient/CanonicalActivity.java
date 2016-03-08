@@ -1,21 +1,22 @@
-package com.severs.android.directcharacterioaccess;
+package com.severs.android.canonicalclient;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.os.Handler;
+//import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import com.severs.android.lib.charactor_io.LibCharactorIO;
+import android.widget.Toast;
+import com.severs.android.service.canonical.CanonicalListener;
+import com.severs.android.service.canonical.CanonicalManager;
 
-
-public class DirectCharacterIOAccess extends Activity {
+public class CanonicalActivity extends Activity implements CanonicalListener {
 
   private TextView mTextView;
   private TextView mTextViewWrite;
   private TextView mTextViewRead;
 
-  private LibCharactorIO mLibCharactorIO;
+  private final CanonicalManager mCanonicalManager = CanonicalManager.getInstance();
 
   private Button mButtonWrite;
   private Button mButtonRead;
@@ -29,12 +30,11 @@ public class DirectCharacterIOAccess extends Activity {
 
   public static String newline = System.getProperty("line.separator");
 
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     super.setContentView(R.layout.buffer_status);
-
-    mLibCharactorIO = new LibCharactorIO();
 
     mTextView = (TextView) super.findViewById(R.id.buffer_status);
 
@@ -55,7 +55,8 @@ public class DirectCharacterIOAccess extends Activity {
             writeString = writeString + newline + mBufferWrite[i];
           }
           mTextViewWrite.setText(writeString);
-          mLibCharactorIO.writeBuffer(mBufferWrite, 0, WRITE_BUFFER_SIZE);
+          mCanonicalManager.writeBuffer(mBufferWrite, 0, WRITE_BUFFER_SIZE);
+
           renderBufferStatus();
         }
     });
@@ -65,7 +66,7 @@ public class DirectCharacterIOAccess extends Activity {
     mButtonRead.setOnClickListener(new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-          mBufferRead = mLibCharactorIO.readBuffer(READ_BUFFER_SIZE, 5000);
+          mBufferRead = mCanonicalManager.readBuffer(READ_BUFFER_SIZE, 5000);
           String readString = "";
           readString = "read " + mBufferRead.length + " bytes";
           for (int i = 0; i < mBufferRead.length; ++i) {
@@ -82,16 +83,41 @@ public class DirectCharacterIOAccess extends Activity {
         @Override
         public void onClick(View v) {
           mTextView.setText("pressed flush button");
-          mLibCharactorIO.flushBuffer();
+          mCanonicalManager.flushBuffer();
           renderBufferStatus();
         }
     });
 
   }
 
+
+  @Override
+  public void onResume () {
+    super.onResume();
+    mCanonicalManager.register(this);
+
+    /* TODO add state to render history for display reconstruction */
+  }
+
+
+  @Override
+  public void onPause () {
+    super.onPause();
+    mCanonicalManager.unregister(this);
+  }
+
+
   private void renderBufferStatus() {
-    int bufferSize = mLibCharactorIO.getBufferSize();
-    int bufferCapacity = mLibCharactorIO.getBufferCapacity();
+    int bufferSize = mCanonicalManager.getBufferSize();
+    int bufferCapacity = mCanonicalManager.getBufferCapacity();
     mTextView.setText(super.getString(R.string.buffer_status, bufferSize, bufferCapacity));
+  }
+
+
+  @Override
+  public void onBufferStateChange(int size, int headIndex, int tailIndex) {
+    CharSequence text = "onBufferStateChange()";
+    Toast toast = Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT);
+    toast.show();
   }
 }

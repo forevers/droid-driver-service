@@ -118,7 +118,7 @@
     - test the new image
         $ cd ~/aospDevelopment/mkImageTools/imageTools/boot.img-tools
         $ adb reboot bootloader
-		// TODO fix fastboot tool to run without sudo
+        // TODO fix fastboot tool to run without sudo
         $ sudo ~/aospDevelopment/aosp/out/host/linux-x86/bin/fastboot boot mynewimage.img 
         // root adb access
         $ adb root

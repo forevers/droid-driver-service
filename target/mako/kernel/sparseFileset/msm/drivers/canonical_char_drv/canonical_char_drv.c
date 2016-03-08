@@ -28,6 +28,7 @@
 #include <linux/sched.h>        /* wait queues */
 #include <linux/slab.h>         /* kmalloc */
 #include <linux/uaccess.h>      /* copy_(to,from)_user */
+#include <linux/wait.h>         /* wait queue for blocking ioctl call */
 
 #include "canonical_char_drv.h"
 
@@ -48,15 +49,19 @@
 #define CHARS_FREE_TO_END(circ)     (CIRC_SPACE_TO_END((circ)->head, (circ)->tail, (size_t)KBUF_SIZE))
 
 struct CanonicalCharDevice {
-    struct circ_buf circBuf;        /* dynamically allocated buffer */
-    wait_queue_head_t wq_read;      /* read data available sync */
-    wait_queue_head_t wq_write;     /* write buffer space available sync */
+    struct circ_buf circBuf;                /* dynamically allocated buffer */
+    wait_queue_head_t wq_read;              /* read data available sync */
+    wait_queue_head_t wq_write;             /* write buffer space available sync */
     atomic_t data_ready_to_read;
+    atomic_t num_async_inputs;              /* async input writes which occured since last ASNYC_INPUT_BLOCK call */
     atomic_t buffer_ready_to_write;
-    int dummyMode;                  /* set a "mode" for the device (for procfs, sysfs, and ioctl access) */
-    ssize_t bufSize;                /* buffer depth */
-    struct semaphore sem;           /* buffer access semaphore */
-    struct cdev dev;                /* charactor device */
+    int dummyMode;                          /* set a "mode" for the device (for procfs, sysfs, and ioctl access) */
+    ssize_t bufSize;                        /* buffer depth */
+    struct semaphore sem;                   /* buffer access semaphore */
+    struct cdev dev;                        /* charactor device */
+
+    // TODO consider using fcntl (... FASYNC ... ) to generate signals to client process instead of blocking client calls
+    wait_queue_head_t wq_async_input_block; /* signaling for blocking async input */
 };
 static struct CanonicalCharDevice* pCanonicalCharDevice = NULL;
 
@@ -111,6 +116,10 @@ drv_open (struct inode *inode, struct file * pFile)
 static int 
 drv_release (struct inode *inode, struct file *file) {
 
+    struct CanonicalCharDevice* dev = file->private_data; 
+
+    /* release any wait queued ASNYC_INPUT_BLOCK client */
+    wake_up_interruptible(&dev->wq_async_input_block);
     printk(KERN_INFO DEVICE_NODE_NAME": drv_release()\n");
     return 0;
 }
@@ -287,7 +296,11 @@ drv_write (struct file *file, const char __user * buf, size_t lbuf, loff_t * ppo
             }
         }
 
+        atomic_inc(&pCharDevice->num_async_inputs);
         atomic_set(&pCharDevice->data_ready_to_read, 1);
+
+        /* wake up any blocked tasks waiting for async input event */
+        wake_up_interruptible(&pCharDevice->wq_async_input_block);
 
         printk(KERN_INFO DEVICE_NODE_NAME": write success: nbytes=0x%x, head = 0x%x, tail = 0x%x, pos=0x%x\n", 
             retVal, pCircBuf->head, pCircBuf->tail, (int)*ppos);
@@ -376,11 +389,17 @@ static long drv_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
     struct CanonicalCharDevice* pCharDevice = file->private_data;
 
     printk(KERN_INFO DEVICE_NODE_NAME": drv_ioctl()\n");
-    printk(KERN_INFO DEVICE_NODE_NAME": cmd: %d\n", cmd);
+    printk(KERN_INFO DEVICE_NODE_NAME": cmd: %x\n", cmd);
 
     /* validate magic number and ioctl number */
-    if (_IOC_TYPE(cmd) != __CANONICAL_CHAR_DRV_IOC) return retVal;
-    if (_IOC_NR(cmd) >= __CANONICAL_CHAR_DRV_IOC_MAX_NMBR) return retVal;
+    if (_IOC_TYPE(cmd) != __CANONICAL_CHAR_DRV_IOC) {
+        printk(KERN_INFO DEVICE_NODE_NAME": _IOC_TYPE(cmd) != __CANONICAL_CHAR_DRV_IOC\n");
+        return retVal;
+    }
+    if (_IOC_NR(cmd) > __CANONICAL_CHAR_DRV_IOC_MAX_NMBR) {
+        printk(KERN_INFO DEVICE_NODE_NAME": _IOC_NR(cmd) > __CANONICAL_CHAR_DRV_IOC_MAX_NMBR\n");
+        return retVal;
+    }
 
     /* validate arg read user memory space or write linux memory space */
     if (_IOC_DIR(cmd) & _IOC_READ)
@@ -389,32 +408,67 @@ static long drv_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
         err = !access_ok(VERIFY_READ, (void __user*)arg, _IOC_SIZE(cmd));
     if (err) return -EFAULT;
 
-    if (down_interruptible(&(pCharDevice->sem))) {
-        return -ERESTARTSYS; 
+    /* TODO consider supporting this feature via a read of size 0 */
+    if (cmd == ASNYC_INPUT_BLOCK) {
+
+        int timeout_msec;
+        if ((retVal = __get_user(timeout_msec, (int __user*)arg)) == 0) {
+            unsigned long timeout_jiffies = msecs_to_jiffies(timeout_msec);
+            printk(KERN_INFO DEVICE_NODE_NAME": ASNYC_INPUT_BLOCK for %d msec entry\n", timeout_msec);
+            /* wait for async input event or timeout */
+            /* returns: 0 if the condition evaluated to false after the timeout elapsed
+                        1 if the condition evaluated to true after the timeout elapsed, 
+                        the remaining jiffies (at least 1) if the condition evaluated to true before the timeout elapsed
+                        or -ERESTARTSYS if it was interrupted by a signal. */
+
+            retVal = wait_event_interruptible_timeout(pCharDevice->wq_async_input_block, atomic_read(&pCharDevice->num_async_inputs), timeout_jiffies);
+            /* TODO probably make this a while if ERESTARTSYS occurs */
+            if (signal_pending(current)) {
+                retVal = -ERESTARTSYS;
+            } else {
+                /* return current buffer size if asnyc input has occured while in ASNYC_INPUT_BLOCK, else return 0 */
+                if (retVal) {
+                    retVal = __put_user(pCharDevice->bufSize, (int __user*)arg);
+                } else {
+                    /* timeout occurred */
+                    retVal = __put_user(0, (int __user*)arg);
+                }
+                atomic_set(&pCharDevice->num_async_inputs, 0);
+            }
+            printk(KERN_INFO DEVICE_NODE_NAME": ASNYC_INPUT_BLOCK exit\n");
+        }
+
+    } else {
+
+        if (down_interruptible(&(pCharDevice->sem))) {
+            return -ERESTARTSYS; 
+        }
+
+        switch (cmd) {
+        case GET_BUFFER_CAPACITY:
+            printk(KERN_INFO DEVICE_NODE_NAME": GET_BUFFER_CAPACITY, KBUF_SIZE: %d\n", (size_t)KBUF_SIZE);
+            retVal = __put_user(KBUF_SIZE, (int __user*)arg);
+            break;
+        case GET_BUFFER_SIZE:
+            printk(KERN_INFO DEVICE_NODE_NAME": GET_BUFFER_SIZE, bufSize: %d\n", pCharDevice->bufSize);
+            retVal = __put_user(pCharDevice->bufSize, (int __user*)arg);
+            break;
+        case FLUSH_BUFFER:
+            printk(KERN_INFO DEVICE_NODE_NAME": FLUSH_BUFFER\n");
+            /* reset head and tail pointers */
+            pCharDevice->circBuf.head = pCharDevice->circBuf.tail = 0;
+            pCharDevice->bufSize = 0;
+            retVal = 0;
+            break;
+        }
+
+        up(&(pCharDevice->sem));
+
+        // goto out;
+        // out:
     }
 
-    switch (cmd) {
-    case GET_BUFFER_CAPACITY:
-        printk(KERN_INFO DEVICE_NODE_NAME": GET_BUFFER_CAPACITY, KBUF_SIZE: %d\n", (size_t)KBUF_SIZE);
-        retVal = __put_user(KBUF_SIZE, (int __user*)arg);
-        break;
-    case GET_BUFFER_SIZE:
-        printk(KERN_INFO DEVICE_NODE_NAME": GET_BUFFER_SIZE, bufSize: %d\n", pCharDevice->bufSize);
-        retVal = __put_user(pCharDevice->bufSize, (int __user*)arg);
-        break;
-    case FLUSH_BUFFER:
-        printk(KERN_INFO DEVICE_NODE_NAME": FLUSH_BUFFER\n");
-        /* reset head and tail pointers */
-        pCharDevice->circBuf.head = pCharDevice->circBuf.tail = 0;
-        pCharDevice->bufSize = 0;
-        retVal = 0;
-        break;
-    }
 
-    goto out;
-
-    out:
-    up(&(pCharDevice->sem));
 
     return retVal;
 }
@@ -693,8 +747,13 @@ canonical_char_drv_init (void)
         goto destroy_device;
     }
 
+    atomic_set(&pCanonicalCharDevice->data_ready_to_read, 0);
+    atomic_set(&pCanonicalCharDevice->buffer_ready_to_write, 1);
+    atomic_set(&pCanonicalCharDevice->num_async_inputs, 0);
+
     init_waitqueue_head(&pCanonicalCharDevice->wq_read);
     init_waitqueue_head(&pCanonicalCharDevice->wq_write);
+    init_waitqueue_head(&pCanonicalCharDevice->wq_async_input_block);
     printk(KERN_INFO DEVICE_NODE_NAME": waitqueue's created\n");
 
     /* for sysfs device cache */

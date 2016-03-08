@@ -24,6 +24,29 @@
             │       │   │              │        └── test_canonical_char_drv.c
             │       │   │              ├── custom_apps
             │       │   │              │   ├── Android.mk
+            │       │   │              │   ├── CanonicalClient
+            │       │   │              │   │   ├── res
+            │       │   │              │   │   │   ├── layout
+            │       │   │              │   │   │   │   └── buffer_status.xml
+            │       │   │              │   │   │   └── values
+            │       │   │              │   │   │       ├── colors.xml
+            │       │   │              │   │   │       └── strings.xml
+            │       │   │              │   │   ├── src
+            │       │   │              │   │   │   └── com
+            │       │   │              │   │   │       └── severs
+            │       │   │              │   │   │           └── android
+            │       │   │              │   │   │               └── canonicalclient
+            │       │   │              │   │   │                   └── CanonicalActivity.java
+            │       │   │              │   │   ├── Android.mk
+            │       │   │              │   │   └── AndroidManifest.xml
+            │       │   │              │   ├── CanonicalService
+            │       │   │              │   │   ├── res/values
+            │       │   │              │   │   │   └── strings.xml
+            │       │   │              │   │   ├── src/com/severs/android/canonicalservice
+            │       │   │              │   │   │   ├── CanonicalServiceApp.java
+            │       │   │              │   │   │   └── ICanonicalServiceImpl.java
+            │       │   │              │   │   ├── Android.mk
+            │       │   │              │   │   └── AndroidManifest.xml
             │       │   │              │   └── DirectCharacterIOAccess
             │       │   │              │       ├── Android.mk
             │       │   │              │       ├── AndroidManifest.xml
@@ -43,6 +66,14 @@
             │       │   │              ├── init.mako.rc
             │       │   │              └── framework
             │       │   │                  ├── Android.mk
+            │       │   │                  ├── canonicalservice
+            │       │   │                  │   ├── com/severs/android/service/canonical
+            │       │   │                  │   │   ├── CanonicalListener.java
+            │       │   │                  │   │   ├── CanonicalManager.java
+            │       │   │                  │   │   ├── ICanonicalListener.aidl
+            │       │   │                  │   │   └── ICanonicalService.aidl
+            │       │   │                  │   ├──Android.mk
+            │       │   │                  │   └──com.severs.android.service.canonical.xml
             │       │   │                  └── libcanonical_char_io_jni
             │       │   │                      ├── Android.mk
             │       │   │                      ├── java
@@ -112,6 +143,25 @@ droid-driver-service/target/mako/android/sparseFileset/aosp/device/lge/mako/bin 
 
 droid-driver-service/target/mako/android/sparseFileset/aosp/device/lge/mako/custom_apps :
     Android.mk - recursive make
+    
+    /CanonicalClient :
+        /res/layout/buffer_status.xml
+        /res/values :
+            colors.xml
+            strings.xml
+        /src/com/severs/android/canonicalclient :
+            CanonicalActivity.java - 
+        Android.mk
+        AndroidManifest.xml
+
+    /CanonicalService :
+        /res/values/strings.xml - permission strings
+        /CanonicalService/src/com/severs/android/canonicalservice :
+            CanonicalServiceApp.java - application which creates (bootstraps) the service ICanonicalServiceImpl and registers it with the ServiceManager
+            ICanonicalServiceImpl.java - service implementation
+        Android.mk - signs the service with the platform key to allow it to run as a system service
+        AndroidManifest.xml - service allowed to run as system, permission definition, boot service on boot, specify required libraries
+
     /DirectCharacterIOAccess :
         - Android.mk - recursive make
         - AndroidManifest.xml - DirectCharacterIOAccess application manifest
@@ -131,10 +181,22 @@ droid-driver-service/target/mako/android/sparseFileset/aosp/device/lge/mako :
         PRODUCT_PACKAGES += libcharactor_io_jni
         PRODUCT_PACKAGES += com.severs.android.lib.charactor_io com.severs.android.lib.charactor_io.xml libcharactor_io_jni
         PRODUCT_PACKAGES += DirectCharacterIOAccess
+        PRODUCT_PACKAGES += com.severs.android.service.canonical
+        PRODUCT_PACKAGES += com.severs.android.service.canonical.xml
+        PRODUCT_PACKAGES += CanonicalService
     init.mako.rc - chmod module to 0x666
 
 droid-driver-service/target/mako/android/sparseFileset/aosp/device/lge/mako/framework :
     Android.mk - recursive make
+    /canonicalservice :
+        /com/severs/android/service/canonical :
+            CanonicalListener.java - listener callback class API
+            CanonicalManager.java - Manager class utilized by applications
+            ICanonicalListener.aidl - listener API exposed to Manager
+            ICanonicalService.aidl - service API exposed to Manager
+        Android.mk - build service library jar, documentation, copy com.severs.android.service.canonical.xml to /system/etc/permissions/
+        com.severs.android.service.canonical.xml - xml descriptor of java service jar library 
+
     /libcanonical_char_io_jni :
         Android.mk - recursive make
         /java :

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+  <!-- 
+    enable canoncial service to run as system user :
+      android:sharedUserId="android.uid.system"
+
+    permission enforced by service :
+      android:description="@string/canonical_permission_description"
+
+    start service on boot :
+      android:persistent="true"
+
+    service library :
+      uses-library android:name="com.severs.android.service.canonical"
+
+    hal library :
+      uses-library android:name="com.severs.android.lib.charactor_io"
+  -->
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="com.severs.android.canonicalservice"
+  android:sharedUserId="android.uid.system">
+
+  <permission android:name="com.severs.android.canonicalservice.CANONICAL_ACCESS"
+    android:protectionLevel="dangerous"
+    android:permissionGroup="android.permission-group.SYSTEM_TOOLS"
+    android:label="@string/canonical_permission_label"
+    android:description="@string/canonical_permission_description"/>
+
+  <application android:name=".CanonicalServiceApp" 
+		android:persistent="true">
+
+    <uses-library android:name="com.severs.android.service.canonical" />
+    <uses-library android:name="com.severs.android.lib.charactor_io" />
+  </application>
+
+</manifest>
+

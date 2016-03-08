@@ -21,13 +21,13 @@
     // include/asm-generic/ioctl.h, include/asm-generic/ioctls.h, 
     // Documentation/ioctl/ioctl-number.txt, Documentation/ioctl/ioctl-decoding.txt
 // http://tuxthink.blogspot.com/2011/01/creating-ioctl-command.html
-#define __CANONICAL_CHAR_DRV_IOC	0xBF
+#define __CANONICAL_CHAR_DRV_IOC 0xBF
 
-#define GET_BUFFER_CAPACITY     _IOR(__CANONICAL_CHAR_DRV_IOC, 1, int) /* read capacity of buffer */
-#define GET_BUFFER_SIZE	        _IOR(__CANONICAL_CHAR_DRV_IOC, 2, int) /* read used buffer size */
-#define FLUSH_BUFFER            _IO(__CANONICAL_CHAR_DRV_IOC, 3) /* flush buffer */
+#define GET_BUFFER_CAPACITY     _IOR(__CANONICAL_CHAR_DRV_IOC, 1, int)  /* read capacity of buffer */
+#define GET_BUFFER_SIZE	        _IOR(__CANONICAL_CHAR_DRV_IOC, 2, int)  /* read used buffer size */
+#define FLUSH_BUFFER            _IO(__CANONICAL_CHAR_DRV_IOC, 3)        /* flush buffer */
+#define ASNYC_INPUT_BLOCK       _IOWR(__CANONICAL_CHAR_DRV_IOC, 4, int) /* block for async input (with timeout) */
 
 #define __CANONICAL_CHAR_DRV_IOC_MAX_NMBR 4
-
 
  #endif // CANONICAL_CHAR_DRV_H

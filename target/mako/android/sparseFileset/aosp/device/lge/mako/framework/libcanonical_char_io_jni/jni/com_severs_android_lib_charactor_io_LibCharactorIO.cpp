@@ -113,6 +113,7 @@ static jbyteArray readBuffer (JNIEnv *env, jobject object, jint size, jint timeo
   return jbyteBuffer;
 }
 
+
 static jint writeBuffer (JNIEnv *env, jobject object, jbyteArray jbyteBuffer, jint startByteIndex, jint numBytes) {
   __android_log_print(ANDROID_LOG_INFO, "charactor_io_jni", "writeBuffer()");
 
@@ -127,13 +128,27 @@ static jint writeBuffer (JNIEnv *env, jobject object, jbyteArray jbyteBuffer, ji
   if ((bytesWritten = dev->write_buffer(dev, reinterpret_cast<uint8_t*>(pWriteBuffer+startByteIndex), numBytes)) >= 0) {
     __android_log_print(ANDROID_LOG_INFO, "charactor_io_jni", "num bytes written: %d", bytesWritten);
   } else {
-      __android_log_print(ANDROID_LOG_INFO, "charactor_io_jni", "Failed to write buffer: %s", strerror(errno));
-      throwLibCharactorIOException(env, "Failed while waiting for buffer data");
+      throwLibCharactorIOException(env, "Failed while writing buffer data");
   }
 
   env->ReleaseByteArrayElements(jbyteBuffer, pWriteBuffer, 0);
 
   return bytesWritten;
+}
+
+
+/* return buffer size if async data input occured within timeout interval */
+static jint blockForAsyncInput (JNIEnv *env, jobject object, jint timeoutInMs) {
+  __android_log_print(ANDROID_LOG_INFO, "charactor_io_jni", "blockForAsyncInput()");
+
+  struct canonical_char_drv_device_t *dev = getDevice(env, object);
+
+  int ret = dev->block_for_async_input(dev, timeoutInMs);
+  if (ret < 0) {
+      throwLibCharactorIOException(env, "Failed while blocking for buffer data");
+  }
+
+  return ret;
 }
 
 
@@ -144,7 +159,8 @@ static JNINativeMethod method_table[] = {
   { "getBufferCapacity", "()I", (void *) getBufferCapacity },
   { "getBufferSize", "()I", (void *) getBufferSize },
   { "readBuffer", "(II)[B", (void *) readBuffer },
-  { "writeBuffer", "([BII)I", (void*) writeBuffer }
+  { "writeBuffer", "([BII)I", (void*) writeBuffer },
+  { "blockForAsyncInput", "(I)I", (void*) blockForAsyncInput }
 };
 
 static const char * class_name = "com/severs/android/lib/charactor_io/LibCharactorIO";

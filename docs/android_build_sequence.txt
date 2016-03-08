@@ -93,6 +93,13 @@
     // TODO fix fastboot tool to run without sudo
     $ sudo ~/aospDevelopment/aosp/out/host/linux-x86/bin/fastboot -w -pmako flashall
 
+    // to just build the library
+    $ godir libcanonical_char_io_jni
+    $ mm
+    $ godir libcanonical_char_drv
+    $ mm
+    $ godir root // to return to aosp root
+
     // verify test of HAL module
     $ adb shell
     shell@mako:/ $ ls -l /system/lib/hw
@@ -105,6 +112,8 @@
 
     // run CL test of driver
     shell@mako:/ $ /system/bin/test_canonical_char_drv
+    or $ adb shell /system/bin/test_canonical_char_drv
+
 
 **********************************************
 ***** Android Platform Service Additions *****
@@ -133,3 +142,8 @@ $ adb shell dalvikvm -cp /system/framework/com.severs.android.lib.charactor_io.j
 $ adb shell logcat -d *:V > logcatEraseme
 $ adb shell dmesg > dmesgEraseme
 
+- create canonical service library and build it
+$ cd ~/aospDevelopment/aosp/device/lge/mako/framework/canonicalservice
+$ mm
+
+- create and build canonical service implementation and Service Application

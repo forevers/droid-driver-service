@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 
+
 static int ioctl_buffer_read (int mode, int request, int* pArg) {
 
     int logfd = open(CANONICAL_CHAR_DRV_FILE, mode);
@@ -24,6 +25,7 @@ static int ioctl_buffer_read (int mode, int request, int* pArg) {
         return ret;
     }
 }
+
 
 static int ioctl_buffer_write (int mode, int request, int arg) {
 
@@ -38,6 +40,8 @@ static int ioctl_buffer_write (int mode, int request, int arg) {
     }
 }
 
+
+// TODO if only used by flush_buffer(), move inside that method
 static int ioctl_buffer (int mode, int request) {
 
     int logfd = open(CANONICAL_CHAR_DRV_FILE, mode);
@@ -51,10 +55,12 @@ static int ioctl_buffer (int mode, int request) {
     }
 }
 
+
 static int flush_buffer (struct canonical_char_drv_device_t* dev) {
     SLOGV("Flushing %s", CANONICAL_CHAR_DRV_FILE);
     return ioctl_buffer(O_WRONLY, FLUSH_BUFFER);
 }
+
 
 static int get_buffer_capacity (struct canonical_char_drv_device_t* dev) {
     int capacity;
@@ -67,6 +73,7 @@ static int get_buffer_capacity (struct canonical_char_drv_device_t* dev) {
     }
 }
 
+
 static int get_buffer_size (struct canonical_char_drv_device_t* dev) {
     int size;
     int retVal;
@@ -78,6 +85,29 @@ static int get_buffer_size (struct canonical_char_drv_device_t* dev) {
         return retVal;
     }
 }
+
+
+static int block_for_async_input (struct canonical_char_drv_device_t* dev, int timeout) {
+    int retVal = -1;
+
+    SLOGV("Blocking for async buffer input to %s with timeout: %d", CANONICAL_CHAR_DRV_FILE, timeout);
+
+    int logfd = open(CANONICAL_CHAR_DRV_FILE, O_RDONLY);
+    if (logfd < 0) {
+        SLOGE("Failed to open %s: %s", CANONICAL_CHAR_DRV_FILE, strerror(errno));
+        return -1;
+    } else {
+        int timeout_and_size = timeout;
+        retVal = ioctl_buffer_read(O_RDWR, ASNYC_INPUT_BLOCK, &timeout_and_size);
+        if (retVal >= 0) {
+            retVal = timeout_and_size;
+        } 
+        close(logfd);
+    }
+
+    return retVal;
+}
+
 
 static int write_buffer (struct canonical_char_drv_device_t* dev, uint8_t* pBuffer, int size) {
 
@@ -95,6 +125,7 @@ static int write_buffer (struct canonical_char_drv_device_t* dev, uint8_t* pBuff
     return size;
 }
 
+
 static int read_buffer (struct canonical_char_drv_device_t* dev, uint8_t* pBuffer, int size) {
 
     SLOGV("read %d bytes from %s at address %x", size, CANONICAL_CHAR_DRV_FILE, pBuffer);
@@ -109,6 +140,7 @@ static int read_buffer (struct canonical_char_drv_device_t* dev, uint8_t* pBuffe
         return ret;
     }
 }
+
 
 static int wait_for_buffer_data (struct canonical_char_drv_device_t* dev, uint8_t* pBuffer, int size, int timeout) {
 
@@ -167,6 +199,7 @@ static int wait_for_buffer_data (struct canonical_char_drv_device_t* dev, uint8_
     return ret;
 }
 
+
 static int close_canonicalchardrv (struct canonical_char_drv_device_t* dev) {
 
     SLOGV("Closing %s", CANONICAL_CHAR_DRV_FILE);
@@ -177,6 +210,7 @@ static int close_canonicalchardrv (struct canonical_char_drv_device_t* dev) {
 
     return 0;
 }
+
 
 static int open_canonicalchardrv (const struct hw_module_t *module, char const *name, struct hw_device_t **device) {
 
@@ -207,6 +241,7 @@ static int open_canonicalchardrv (const struct hw_module_t *module, char const *
         dev->write_buffer = write_buffer;
         dev->read_buffer = read_buffer;
         dev->wait_for_buffer_data = wait_for_buffer_data;
+        dev->block_for_async_input = block_for_async_input;
         *device = (struct hw_device_t *)dev;
         return 0;
     }
