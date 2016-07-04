@@ -3,3 +3,4 @@
 - canonical sdk release mechanism
 - investigate oneway aidl calls passing listener callback for data return
 - kernel driver parameter passing: buffer size, debug modes, ...
+- move or at lead dup ioctls to sysfs files
