@@ -2,3 +2,4 @@
 - daemon for HW peripheral stub emulation
 - canonical sdk release mechanism
 - investigate oneway aidl calls passing listener callback for data return
+- kernel driver parameter passing: buffer size, debug modes, ...
