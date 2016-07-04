@@ -1,0 +1,2 @@
+- shared memory space across binder for raw data xfer
+- daemon for HW peripheral stub emulation
