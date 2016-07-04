@@ -1,4 +1,4 @@
 - shared memory space across binder for raw data xfer
 - daemon for HW peripheral stub emulation
 - canonical sdk release mechanism
-- investiage oneway aidl calls passing listener callback for data return
+- investigate oneway aidl calls passing listener callback for data return
