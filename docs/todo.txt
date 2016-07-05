@@ -7,4 +7,4 @@
 - for kernel >2.6.39 investigate use of ioctl_funcs() instead of older ioctl() API
 - make sysfs file names and proc filenames unique
 - proc_create() instead of create_proc_entry()
-- investiage use of ioremap(), readb() ... on HW with exposed IO. 
+- investiage use of ioremap(), ioread8(), iowrite8() ... on HW with exposed IO. 
