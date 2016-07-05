@@ -8,3 +8,4 @@
 - make sysfs file names and proc filenames unique
 - proc_create() instead of create_proc_entry()
 - investiage use of ioremap(), ioread8(), iowrite8() ... on HW with exposed IO. 
+- do something interesting with device attributes mode_show() and mode_store()
