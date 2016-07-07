@@ -1,0 +1,11 @@
+- shared memory space across binder for raw data xfer
+- daemon for HW peripheral stub emulation
+- canonical sdk release mechanism
+- investigate oneway aidl calls passing listener callback for data return
+- kernel driver parameter passing: buffer size, debug modes, ...
+- move or at lead dup ioctls to sysfs files
+- for kernel >2.6.39 investigate use of ioctl_funcs() instead of older ioctl() API
+- make sysfs file names and proc filenames unique
+- proc_create() instead of create_proc_entry()
+- investiage use of ioremap(), ioread8(), iowrite8() ... on HW with exposed IO. 
+- do something interesting with device attributes mode_show() and mode_store()
