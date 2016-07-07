@@ -223,6 +223,9 @@ PRODUCT_PACKAGES += libcharactor_io_jni
 PRODUCT_PACKAGES += com.severs.android.lib.charactor_io com.severs.android.lib.charactor_io.xml libcharactor_io_jni
 # add android app to directly access Java wrapped JNI library
 PRODUCT_PACKAGES += DirectCharacterIOAccess
+#
+PRODUCT_PACKAGES += com.severs.android.service.canonical
+PRODUCT_PACKAGES += com.severs.android.service.canonical.xml
 # add canonical service 
 PRODUCT_PACKAGES += CanonicalService
 # add canonical service client

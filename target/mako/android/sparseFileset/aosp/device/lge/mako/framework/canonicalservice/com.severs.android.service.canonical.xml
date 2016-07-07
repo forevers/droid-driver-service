@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<? this library jar abstracts the binder operations for use by the manager ?>
+<permissions>
+  <library name="com.severs.android.service.canonical"
+    file="/system/framework/com.severs.android.service.canonical.jar"/>
+</permissions>
+

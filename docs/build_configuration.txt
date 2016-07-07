@@ -94,11 +94,20 @@
 - To have the AOSP build use externally located zImage
     // was not able to get this to work
     $ export TARGET_PREBUILT_KERNEL=~/aospDevelopment/kernelMako/msm/arch/arm/boot/zImage
+    or CL make option (see make below) $ make -j6 TARGET_PREBUILT_KERNEL="~/aospDevelopment/kernelMako/msm/arch/arm/boot/zImage"
 - checkout kernel android-4.4.4_r1 branch identified by AOSP prebuilt kernel inspection 
     $ cd msm
     $ git checkout a6edd5e
 - make kernel
     $ make mako_defconfig
+    // build with prebuilt kernel
+    http://comments.gmane.org/gmane.comp.security.seandroid/1300 ... cannot get the TARGET_PREBUILT_KERNEL construct to work
+        In most cases, you can set
+        TARGET_PREBUILT_KERNEL to include your own kernel into the boot.img
+        rather than the prebuilt one (but unfortunately the mako device.mk file
+        does not support this construct, so you have to copy your kernel into
+        place by hand or regenerate the boot.img manually).
+    // build with AOSP provided kernel
     $ make –j6
     // zImage output located at /arch/arm/boot
 - Kitkat required some effort to integrate kernel into image … don’t think this is required for later Android versions

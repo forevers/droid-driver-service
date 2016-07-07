@@ -59,6 +59,21 @@ cp $AOSP_ROOTDIR/device/lge/mako/bin/testCanonicalCharDrv/Android.mk ./aosp/devi
 cp $AOSP_ROOTDIR/device/lge/mako/bin/testCanonicalCharDrv/test_canonical_char_drv.c ./aosp/device/lge/mako/bin/testCanonicalCharDrv/test_canonical_char_drv.c
 
 cp $AOSP_ROOTDIR/device/lge/mako/framework/Android.mk ./aosp/device/lge/mako/framework/Android.mk
+
+cp $AOSP_ROOTDIR/device/lge/mako/framework/canonicalservice/com/severs/android/service/canonical/CanonicalListener.java \
+     ./aosp/device/lge/mako/framework/canonicalservice/com/severs/android/service/canonical/CanonicalListener.java
+cp $AOSP_ROOTDIR/device/lge/mako/framework/canonicalservice/com/severs/android/service/canonical/CanonicalManager.java \
+     ./aosp/device/lge/mako/framework/canonicalservice/com/severs/android/service/canonical/CanonicalManager.java
+cp $AOSP_ROOTDIR/device/lge/mako/framework/canonicalservice/com/severs/android/service/canonical/ICanonicalListener.aidl \
+     ./aosp/device/lge/mako/framework/canonicalservice/com/severs/android/service/canonical/ICanonicalListener.aidl
+cp $AOSP_ROOTDIR/device/lge/mako/framework/canonicalservice/com/severs/android/service/canonical/ICanonicalService.aidl \
+     ./aosp/device/lge/mako/framework/canonicalservice/com/severs/android/service/canonical/ICanonicalService.aidl
+
+cp $AOSP_ROOTDIR/device/lge/mako/framework/canonicalservice/Android.mk ./aosp/device/lge/mako/framework/canonicalservice/Android.mk
+cp $AOSP_ROOTDIR/device/lge/mako/framework/canonicalservice/com.severs.android.service.canonical.xml \
+     ./aosp/device/lge/mako/framework/canonicalservice/com.severs.android.service.canonical.xml
+
+
 cp $AOSP_ROOTDIR/device/lge/mako/framework/libcanonical_char_io_jni/Android.mk ./aosp/device/lge/mako/framework/libcanonical_char_io_jni/Android.mk
 cp $AOSP_ROOTDIR/device/lge/mako/framework/libcanonical_char_io_jni/java/Android.mk ./aosp/device/lge/mako/framework/libcanonical_char_io_jni/java/Android.mk
 cp $AOSP_ROOTDIR/device/lge/mako/framework/libcanonical_char_io_jni/java/com/severs/android/lib/charactor_io/LibCharactorIOException.java ./aosp/device/lge/mako/framework/libcanonical_char_io_jni/java/com/severs/android/lib/charactor_io/LibCharactorIOException.java

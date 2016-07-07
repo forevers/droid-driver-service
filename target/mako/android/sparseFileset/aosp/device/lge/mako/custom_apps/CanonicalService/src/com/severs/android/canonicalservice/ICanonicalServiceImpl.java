@@ -76,9 +76,9 @@ class ICanonicalServiceImpl extends ICanonicalService.Stub {
 
   public void register (ICanonicalListener listener) throws RemoteException {
     if (listener != null) {
-      IBinder binder = listener.asBinder();blockForAsyncInput() async input size: 10
+      IBinder binder = listener.asBinder();
       synchronized(this.listeners) {
-        if (this.listeners.containsKey(binder)) {blockForAsyncInput() async input size: 10
+        if (this.listeners.containsKey(binder)) {
           Slog.w(TAG, "Ignoring duplicate listener: " + binder);
         } else {
           ListenerTracker listenerTracker = new ListenerTracker(listener);
@@ -174,14 +174,13 @@ class ICanonicalServiceImpl extends ICanonicalService.Stub {
   private final class CanonicalServiceThread extends Thread {
     public void run () {
 
-      int size;
       while (!Thread.interrupted()) {
         try {
 
           if (DEBUG) Slog.d(TAG, "Waiting for buffer data");
           int new_size = ICanonicalServiceImpl.this.libCharactorIO.blockForAsyncInput(INCREMENTAL_TIMEOUT);
-          if (size > 0) {
-            if (DEBUG) Slog.d(TAG, "blockForAsyncInput() async input size: " + size);
+          if (new_size > 0) {
+            if (DEBUG) Slog.d(TAG, "blockForAsyncInput() async input size: " + new_size);
 
             synchronized (ICanonicalServiceImpl.this.listeners) {
               for (Map.Entry<IBinder, ListenerTracker> entry : ICanonicalServiceImpl.this.listeners.entrySet()) {
@@ -191,7 +190,7 @@ class ICanonicalServiceImpl extends ICanonicalService.Stub {
                   // TODO consider metadata dump from sysfs for headIndex, int tailIndex, ... in json or char/string blob */
                   int headIndex = -1;
                   int tailIndex = -1;
-                  listener.onBufferStateChange(size, headIndex, tailIndex);
+                  listener.onBufferStateChange(new_size, headIndex, tailIndex);
                 } catch (RemoteException e) {
                   Slog.e(TAG, "Failed to update listener: " + entry.getKey(), e);
                   ICanonicalServiceImpl.this.unregister(listener);

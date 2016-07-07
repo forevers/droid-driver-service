@@ -94,10 +94,14 @@ static const struct file_operations canonical_char_drv_fops = {
     .release = drv_release,
 };
 
-/* sysfs show and store */
-static ssize_t mode_show(struct device* dev, struct device_attribute* attr, char* buf);
-static ssize_t mode_store(struct device* dev, struct device_attribute* attr, const char* buf, size_t count);
-static DEVICE_ATTR(mode, S_IRUGO | S_IWUSR, mode_show, mode_store);
+
+/* Note: device attributes
+    https://www.kernel.org/doc/Documentation/driver-model/device.txt
+*/
+/* sysfs show and store mode */
+static ssize_t mode_show (struct device* dev, struct device_attribute* attr, char* buf);
+static ssize_t mode_store (struct device* dev, struct device_attribute* attr, const char* buf, size_t count);
+static DEVICE_ATTR (mode, S_IRUGO | S_IWUSR, mode_show, mode_store);
 
 
 static int 
@@ -318,7 +322,9 @@ drv_write (struct file *file, const char __user * buf, size_t lbuf, loff_t * ppo
 }
 
 
-/*
+/* poll design
+    http://www.makelinux.net/ldd3/chp-6-sect-3
+
 POLLIN
 This bit must be set if the device can be read without blocking.
 
@@ -347,10 +353,7 @@ POLLWRBAND
 Like POLLRDBAND, this bit means that data with nonzero priority can be written to the device. Only the datagram implementation of poll uses this bit, since a datagram can transmit out-of-band data.
 */
 
-/* poll design
- * http://www.makelinux.net/ldd3/chp-6-sect-3
- */
-static unsigned int drv_poll(struct file *file, poll_table *wait)
+static unsigned int drv_poll (struct file *file, poll_table *wait)
 {
     unsigned int retVal = 0;
     struct CanonicalCharDevice* pCharDevice = file->private_data;
@@ -381,7 +384,26 @@ static unsigned int drv_poll(struct file *file, poll_table *wait)
 }
 
 
-static long drv_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+/* NOTE: ioctl usage
+http://www.makelinux.net/ldd3/chp-6-sect-1
+
+The actual nature of the third argument depends on the specific control command being 
+issued (the second argument). Some commands take no arguments, some take an integer 
+value, and some take a pointer to other data.
+
+There is strong pressure to implement miscellaneous control operations by just about 
+any other means. Possible alternatives include embedding commands into the data stream 
+(we will discuss this approach later in this chapter) or using virtual filesystems, 
+either sysfs or driver-specific filesystems. However, the fact remains that ioctl is 
+often the easiest and most straightforward choice for true device operations.
+*/
+
+/* NOTE: 
+http://tuxthink.blogspot.com/2012/12/implementing-ioctl-call-for-kernel.html
+
+Investigate ioctl_funcs() method for kernel versions above 2.6.39.
+*/
+static long drv_ioctl (struct file *file, unsigned int cmd, unsigned long arg)
 {
     long retVal = -EINVAL;
     int err = 0;
@@ -463,19 +485,15 @@ static long drv_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
         }
 
         up(&(pCharDevice->sem));
-
-        // goto out;
-        // out:
     }
-
-
 
     return retVal;
 }
 
 
+/* sysfs mode attribute access */
 static ssize_t 
-get_mode(struct CanonicalCharDevice* pDevice, char* buf) {
+get_mode (struct CanonicalCharDevice* pDevice, char* buf) {
 
     int mode = 0; 
 
@@ -492,8 +510,9 @@ get_mode(struct CanonicalCharDevice* pDevice, char* buf) {
 }
 
 
+/* sysfs mode attribute control */
 static ssize_t 
-set_mode(struct CanonicalCharDevice* pDevice, const char* buf, size_t count) {
+set_mode (struct CanonicalCharDevice* pDevice, const char* buf, size_t count) {
 
     int mode = 0; 
 
@@ -513,7 +532,7 @@ set_mode(struct CanonicalCharDevice* pDevice, const char* buf, size_t count) {
 
 
 static ssize_t 
-mode_show(struct device* dev, struct device_attribute* attr, char* buf) {
+mode_show (struct device* dev, struct device_attribute* attr, char* buf) {
 
     struct CanonicalCharDevice* pCanonicalCharDevice = (struct CanonicalCharDevice*)dev_get_drvdata(dev);
 
@@ -522,8 +541,9 @@ mode_show(struct device* dev, struct device_attribute* attr, char* buf) {
     return get_mode(pCanonicalCharDevice, buf);
 }
 
+
 static ssize_t 
-mode_store(struct device* dev, struct device_attribute* attr, const char* buf, size_t count) {
+mode_store (struct device* dev, struct device_attribute* attr, const char* buf, size_t count) {
 
     struct CanonicalCharDevice* pCanonicalCharDevice = (struct CanonicalCharDevice*)dev_get_drvdata(dev);
 
@@ -533,9 +553,9 @@ mode_store(struct device* dev, struct device_attribute* attr, const char* buf, s
 }
 
 
-/* procfs read */
+/* procfs read, see create_proc() for creation */
 static ssize_t 
-proc_read(char* page, char** start, off_t off, int count, int* eof, void* data) {
+proc_read (char* page, char** start, off_t off, int count, int* eof, void* data) {
 
     int retVal;
     static int numCalls = 0;
@@ -571,9 +591,9 @@ proc_read(char* page, char** start, off_t off, int count, int* eof, void* data) 
 }
 
 
-/* procfs write */
+/* procfs write, see create_proc() for creation */
 static ssize_t 
-proc_write(struct file* file, const char __user *buff, unsigned long len, void* data) {
+proc_write (struct file* file, const char __user *buff, unsigned long len, void* data) {
 
     struct CanonicalCharDevice* pCharDevice = file->private_data; 
     int retVal = 0;
@@ -613,12 +633,13 @@ proc_write(struct file* file, const char __user *buff, unsigned long len, void* 
 
 /* create procfs entry */
 static void 
-create_proc(void) {
+create_proc (void) {
 
     struct proc_dir_entry* entry;
 
     printk(KERN_INFO DEVICE_NODE_NAME": create_proc()\n");
 
+    /* create /proc/CANONICAL_CHAR_DRV_DEVICE_PROC_NAME file */
     entry = create_proc_entry(CANONICAL_CHAR_DRV_DEVICE_PROC_NAME, 0, NULL);
     if (entry) {
         entry->read_proc = proc_read;
@@ -627,9 +648,9 @@ create_proc(void) {
 }
 
 
-/* create procfs entry */
+/* remove procfs entry */
 static void 
-remove_proc(void) {
+remove_proc (void) {
 
     printk(KERN_INFO DEVICE_NODE_NAME": remove_proc()\n");
 
@@ -637,11 +658,12 @@ remove_proc(void) {
 }
 
 
-/* configure the canonical device */
+/* configure the canonical character device */
 static int 
-setup_dev(struct CanonicalCharDevice* pDev) {
+setup_dev (struct CanonicalCharDevice* pDev) {
 
     int err;
+    /* cdev_add() required device number ... which was assigned dynamically */
     dev_t devno = MKDEV(major, minor);
 
     printk(KERN_INFO DEVICE_NODE_NAME": setup_dev()\n");
@@ -659,13 +681,16 @@ setup_dev(struct CanonicalCharDevice* pDev) {
     } 
 
     /* circular buffer initialization */
-    //pDev->pHead = pDev->pTail = pDev->kbuf;
+#if 0
+    pDev->pHead = pDev->pTail = pDev->kbuf;
+#else
     /* early test of buffer wrap */
     pDev->circBuf.head = pDev->circBuf.tail = KBUF_SIZE - 20;
+#endif
     pDev->bufSize = 0;
 
-    /* intialize device with file operations object */
-    cdev_init (&(pDev->dev), &canonical_char_drv_fops);
+    /* intialize character device with file operations object */
+    cdev_init(&(pDev->dev), &canonical_char_drv_fops);
     pDev->dev.owner = THIS_MODULE;
     pDev->dev.ops = &canonical_char_drv_fops; 
 
@@ -695,7 +720,7 @@ canonical_char_drv_init (void)
 
     int err = -1;
 
-    printk (KERN_INFO "PRINTK_TAG: canonical_char_drv_init() %s\n", DEVICE_NODE_NAME);
+    printk(KERN_INFO "PRINTK_TAG: canonical_char_drv_init() %s\n", DEVICE_NODE_NAME);
 
     /* allocate dev to hold major and minor numbers */
     err = alloc_chrdev_region(&dev, 0, 1, DEVICE_NODE_NAME);
@@ -708,6 +733,18 @@ canonical_char_drv_init (void)
     major = MAJOR(dev);
     minor = MINOR(dev); 
 
+    /* NOTE: kermel memory allocation
+        kmalloc gfp_mask values in /include/linux/gfp.h, the following 3 are normally used by drivers ...
+        GFP_KERNEL - normal usage, block and slepp if memory not available
+        GFP_ATOMIC - may be used if kmalloc used in interrupt. ret immediately if no pages avail.
+        GFP_DMA 
+
+        in_interrupt() macro used to check if in interrupt context, then apprpriate mask may be used.
+        kzalloc() to malloc zeroed memory
+        krealloc() to resize existing memory
+        mod 2 memory is allocated
+    */
+
     /* allocate device object */
     pCanonicalCharDevice = kmalloc(sizeof(struct CanonicalCharDevice), GFP_KERNEL);
     if (pCanonicalCharDevice) {
@@ -718,13 +755,15 @@ canonical_char_drv_init (void)
         goto unregister;
     } 
 
-    /* configure device object */
+    /* configure character  device object */
     if ((err = setup_dev(pCanonicalCharDevice))) {
         printk(KERN_ALERT DEVICE_NODE_NAME": setup_dev() failed: %d\n", err);
         goto cleanup;
     } 
 
-    /* create linux driver model class */
+    /* sysfs: create linux driver model class 
+       /sys/class/CANONICAL_CHAR_DRV_DEVICE_CLASS_NAME
+    */
     canonical_char_drv_class = class_create(THIS_MODULE, CANONICAL_CHAR_DRV_DEVICE_CLASS_NAME);
     if (IS_ERR(canonical_char_drv_class)) {
         err = PTR_ERR(canonical_char_drv_class);
@@ -732,7 +771,9 @@ canonical_char_drv_init (void)
         goto destroy_cdev;
     } 
 
-    /* create linux driver mode device with allocated dev major/minor numbers */
+    /* sysfs: create linux driver mode device with allocated dev major/minor numbers 
+       /sys/class/CANONICAL_CHAR_DRV_DEVICE_CLASS_NAME/CANONICAL_CHAR_DRV_DEVICE_FILE_NAME
+    */
     pDevice = device_create(canonical_char_drv_class, NULL, dev, "%s", CANONICAL_CHAR_DRV_DEVICE_FILE_NAME);
     if (IS_ERR(pDevice)) {
         err = PTR_ERR(pDevice);
@@ -809,9 +850,11 @@ canonical_char_drv_exit (void) {
     unregister_chrdev_region(dev, 1);
 }
 
+/* called by OS the module is loaded and unloaded */
 module_init (canonical_char_drv_init);
 module_exit (canonical_char_drv_exit);
 
 MODULE_AUTHOR ("severs");
 MODULE_DESCRIPTION ("canonical_char_drv.c");
+/* if not marked as open source, the module is considered tainted */
 MODULE_LICENSE ("GPL v2");

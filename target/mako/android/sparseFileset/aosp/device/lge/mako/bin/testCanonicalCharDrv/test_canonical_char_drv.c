@@ -70,7 +70,19 @@ int main (int argc, char* argv[]) {
     for (int i = 0; i < WRITE_CHUNK_SIZE; ++i) {
         writeBuffer_[i] = i;
     }
-    
+
+    /* NOTES:
+        see /hardware/libhardward/hardware.c for driver open mechanism
+        see/ hardware/libhardware/modules/README.android for .so naming convention
+            /system/libs/hw/<*_HARDWARE_MODULE_ID>.<ro.product.board>.so
+            /system/libs/hw/<*_HARDWARE_MODULE_ID>.<ro.board.platform>.so
+            /system/libs/hw/<*_HARDWARE_MODULE_ID>.<ro.arch>.so
+            /system/libs/hw/<*_HARDWARE_MODULE_ID>.default.so
+            ... loaded in the "board", "arch" and "default" order
+        /system/lib/hw and /vendor/lib/hw searched for .so's following naming convention described in the README.android file. 
+        dlopen() calls made in hardware.c module.
+        /system/lib/hw/canonical_char_drv.default.so - the driver module being dlopen()'ed
+    */
     int ret = hw_get_module(CANONICAL_CHR_DRV_MODULE_ID, (hw_module_t const**)&module);
     if (ret == 0) {
 

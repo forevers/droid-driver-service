@@ -5,7 +5,9 @@
 
 └── droid-driver-service
     ├── docs
-    │   └── build_configuration.txt
+    │   ├── android_build_sequence.txt
+    │   ├── build_configuration.txt
+    │   └── file_description.txt
     ├── README.md
     └── target
         └── mako
@@ -246,15 +248,15 @@ droid-driver-service/target/mako/kernel/sparseFileset/msm/arch/arm/configs :
     // TODO this is probably redundant
 
 droid-driver-service/target/mako/kernel/sparseFileset/msm/drivers/canonical_char_drv :
-    New kernel driver directory
+    // New kernel driver directory
     canonical_char_drv.c - new canonical charactor driver installed in dev/ and /sys/class.
-    TODO add debugfs registration
+    // TODO add debugfs registration
     canonical_char_drv.h - 
     Kconfig - driver Kconfig, CANONICAL_CHAR_DRV
     Makefile - driver makefile
 
 droid-driver-service/target/mako/kernel/sparseFileset/msm/drivers :
-    KCconfig - source the driver, source "drivers/canonical_char_drv/Kconfig"
+    Kconfig - source the driver, source "drivers/canonical_char_drv/Kconfig"
     Makefile - higher level makefile, built in driver
 
 droid-driver-service/target/mako/kernel/sparseFileset/msm/drivers/staging/android :
