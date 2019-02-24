@@ -1,0 +1,137 @@
+*******************************
+***** Development Machine *****
+*******************************
+
+- Dell Workstation
+
+*******************************
+***** Ubuntu Installation *****
+*******************************
+
+- Ubuntu 14.04 LTS 64 bit install
+
+********************************
+***** Lineage Installation *****
+********************************
+
+- Nexus 6 is marlin
+- Development root directory
+    $ export SHAMU_DEV_ROOT=<path to lineage os dev directory>
+- From https://wiki.lineageos.org/devices/shamu/build
+    - If adb and fastboot not installed on host
+        - https://dl.google.com/android/repository/platform-tools-latest-linux.zip
+              $ unzip platform-tools-latest-linux.zip -d ~
+        - add to ~/.profile
+            # add Android SDK platform tools to path
+            if [ -d "$HOME/platform-tools" ] ; then
+                PATH="$HOME/platform-tools:$PATH"
+            fi
+    - To build LineageOS, you’ll need:
+        bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libwxgtk3.0-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
+    - For Ubuntu versions older than 16.04 (xenial), substitute:
+        libwxgtk3.0-dev → libwxgtk2.8-dev
+    - Java
+        Different versions of LineageOS require different JDK (Java Development Kit) versions.
+            LineageOS 14.1-15.1: OpenJDK 1.8 (install openjdk-8-jdk)
+            LineageOS 11.0-13.0: OpenJDK 1.7 (install openjdk-7-jdk)
+        This project targets LineageOS 14.1-15.1
+        Couple of commands to inspect installed jdk version:
+            $ java -version
+            $ dpkg --list | grep -i jdk
+    - If repo not installed
+        If ~/bin does no exist:
+            $ mkdir ~/bin
+        If repo does not exist:
+            $ curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+            $ chmod a+x ~/bin/repo
+        If ~/bin not in path, add to ~/.profile
+            # set PATH so it includes user's private bin if it exists
+            if [ -d "$HOME/bin" ] ; then
+                PATH="$HOME/bin:$PATH"
+            fi
+    - install android source for lineage-15.1
+        $ cd $SHAMU_DEV_ROOT
+        $ repo init -u https://github.com/LineageOS/android.git -b lineage-15.1
+        $ repo sync
+    - build images
+        $ source build/envsetup.sh
+        $ breakfast lineage_shamu-userdebug
+    - There are 2 choices regarding prebuilts installation (extract from targets or use muppets)
+    - I had issues with extraction from nexus 6 factory device so I will present muppets step later after initial brunch
+    - $ brunch lineage_shamu-userdebug
+        - this will fail looking for prebuilts
+        - make clean the build directory and remove vendor/motorola subdirectory
+        - add this line to .repo/local_manifests/roomservice.xml :
+            <project name="TheMuppets/proprietary_vendor_motorola" path="vendor/motorola" remote="github" />
+        - $ repo sync --force-sync
+        - rerun brunch
+        - $ brunch lineage_shamu-userdebug
+    - Build results at 
+        - LineageOS installer package : /out/target/product/shamu/lineage_15.1-<date>_shamu.zip
+        - LineageOS recovery image : recovery.img
+    - Install "Team windows Recovery Project" TWRP if not already, https://dl.twrp.me/shamu/
+    - Enter recovery (Vol - during power) on device and select advanced -> adb sideload
+        - https://wiki.lineageos.org/devices/shamu/install
+        - on host $ adb sideload lineage_15.1-<date>_shamu.zip
+
+********************************
+***** Lineage Kernel *****
+********************************
+
+    - install kernel source for lineage-15.1
+        $ cd $SHAMU_DEV_ROOT
+        $ mkdir -p kernel_source_android_lineage_shamu_g06288a2 && cd kernel_source_android_lineage_shamu_g06288a2
+        - kernel version installed with Lineago OS : 3.10.108.g06288a2
+        - clone this sha of the kernel 
+            $ git clone https://github.com/LineageOS/android_kernel_moto_shamu.git
+            - cd android_kernel_moto_shamu
+            - git branch
+            - we want the 15.1 branch
+            $ git checkout -b lineage-15.1 origin/lineage-15.1
+            - check sha
+            $ git log
+            - the branch head is not this version ... checkout sha
+            $ git checkout 06288a2
+            // verify
+            $ git log
+
+    - build kernel using lineage os compiler            
+        $ export ARCH=arm
+        - note : a 32bit compilation
+        $ export CROSS_COMPILE=$SHAMU_DEV_ROOT/lineage_15_1/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8/bin/arm-eabi-
+        $ make clean && make mrproper
+        $ make shamu_defconfig
+        $ make -j16
+
+    - osm0sis img creation tools (forked from CyanogenMod's tools)
+        $ cd $SHAMU_DEV_ROOT
+        $ mkdir image_pack_tools && cd image_pack_tools
+        $ mkdir osmosis && cd osmosis
+        $ git clone https://github.com/osm0sis/mkbootimg.git
+        $ mkdir -p ./image_construction/kernel_image
+
+    - interogate linage os boot.img for package settings
+        $ $SHAMU_DEV_ROOT/osm0sis/mkbootimg/unpackbootimg -i $SHAMU_DEV_ROOT/lineage_15_1/out/target/product/shamu/boot.img
+
+            BOARD_KERNEL_CMDLINE console=ttyHSL0,115200,n8 androidboot.console=ttyHSL0 androidboot.hardware=shamu ehci-hcd.park=3 utags.blkdev=/dev/block/platform/msm_sdcc.1/by-name/utags utags.backup=/dev/block/platform/msm_sdcc.1/by-name/utagsBackup coherent_pool=8M vmalloc=300M buildvariant=userdebug
+            BOARD_KERNEL_BASE 00000000
+            BOARD_NAME 
+            BOARD_PAGE_SIZE 2048
+            BOARD_HASH_TYPE sha1
+            BOARD_KERNEL_OFFSET 00008000
+            BOARD_RAMDISK_OFFSET 02000000
+            BOARD_SECOND_OFFSET 00f00000
+            BOARD_TAGS_OFFSET 01e00000
+            BOARD_OS_VERSION 8.1.0
+            BOARD_OS_PATCH_LEVEL 2018-12
+            BOARD_HEADER_VERSION 0
+
+    - use these values to pack newly compiled kernel into a boot.img for testing
+        $ cd $SHAMU_DEV_ROOT/image_pack_tools/image_construction/kernel_image
+        $ $SHAMU_DEV_ROOT/image_pack_tools/osm0sis/mkbootimg/mkbootimg --kernel $SHAMU_DEV_ROOT/kernel_source_android_lineage_shamu_g06288a2/android_kernel_moto_shamu/arch/arm/boot/zImage-dtb --ramdisk $SHAMU_DEV_ROOT/lineage_15_1/out/target/product/shamu/ramdisk.img --pagesize 2048 --base 00000000 --kernel_offset 00008000 --ramdisk_offset 02000000 --second_offset 00f00000 --os_version 8.1.0 --os_patch_level 2018-12 --tags_offset 01e00000 --cmdline 'console=ttyHSL0,115200,n8 androidboot.console=ttyHSL0 androidboot.hardware=shamu ehci-hcd.park=3 utags.blkdev=/dev/block/platform/msm_sdcc.1/by-name/utags utags.backup=/dev/block/platform/msm_sdcc.1/by-name/utagsBackup coherent_pool=8M vmalloc=300M buildvariant=userdebug' -o my_new_zimagedtb_image.img
+
+    - test the new image
+        $ adb reboot bootloader
+        $ sudo fastboot boot my_new_zimagedtb_image.img 
+        - verify timestamp in Settings -> System -> About phone -> Kernel version
+        
